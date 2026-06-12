@@ -55,6 +55,62 @@ const teamKeyPlayers = {
   "Ghana": "Mohammed Kudus, Inaki Williams", "Panama": "Adalberto Carrasquilla, José Fajardo"
 };
 
+
+const teamNamesBG = {
+  "Mexico":                 "Мексико",
+  "South Africa":           "Южна Африка",
+  "South Korea":            "Южна Корея",
+  "Czechia":                "Чехия",
+  "Canada":                 "Канада",
+  "Bosnia and Herzegovina": "Босна и Херцеговина",
+  "Qatar":                  "Катар",
+  "Switzerland":            "Швейцария",
+  "Brazil":                 "Бразилия",
+  "Morocco":                "Мароко",
+  "Haiti":                  "Хаити",
+  "Scotland":               "Шотландия",
+  "United States":          "САЩ",
+  "Paraguay":               "Парагвай",
+  "Australia":              "Австралия",
+  "Turkey":                 "Турция",
+  "Germany":                "Германия",
+  "Curacao":                "Кюрасао",
+  "Ivory Coast":            "Кот д'Ивоар",
+  "Ecuador":                "Еквадор",
+  "Netherlands":            "Нидерландия",
+  "Japan":                  "Япония",
+  "Sweden":                 "Швеция",
+  "Tunisia":                "Тунис",
+  "Belgium":                "Белгия",
+  "Egypt":                  "Египет",
+  "Iran":                   "Иран",
+  "New Zealand":            "Нова Зеландия",
+  "Spain":                  "Испания",
+  "Cape Verde":             "Кабо Верде",
+  "Saudi Arabia":           "Саудитска Арабия",
+  "Uruguay":                "Уругвай",
+  "France":                 "Франция",
+  "Senegal":                "Сенегал",
+  "Iraq":                   "Ирак",
+  "Norway":                 "Норвегия",
+  "Argentina":              "Аржентина",
+  "Algeria":                "Алжир",
+  "Austria":                "Австрия",
+  "Jordan":                 "Йордания",
+  "Portugal":               "Португалия",
+  "DR Congo":               "ДР Конго",
+  "Uzbekistan":             "Узбекистан",
+  "Colombia":               "Колумбия",
+  "England":                "Англия",
+  "Croatia":                "Хърватия",
+  "Ghana":                  "Гана",
+  "Panama":                 "Панама"
+};
+
+function bg(name) {
+  return teamNamesBG[name] || name;
+}
+
 const groupDates = {
   A: ["11 юни", "12 юни", "18 юни", "18 юни", "24 юни", "24 юни"],
   B: ["12 юни", "13 юни", "18 юни", "18 юни", "24 юни", "24 юни"],
@@ -237,7 +293,7 @@ function renderGroups() {
 
   Object.entries(groups).forEach(([group, teams]) => {
     const table = calculateTable(group);
-    const leader = table[0]?.team || "няма";
+    const leader = bg(table[0]?.team) || "няма";
     const card = document.createElement("article");
     card.className = "group-card";
     card.innerHTML = `
@@ -250,7 +306,7 @@ function renderGroups() {
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
             <span class="team-name" style="display: flex; align-items: center; gap: 8px;">
               <img src="${getFlagUrl(team)}" alt="" style="width: 20px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1)">
-              ${team}
+              ${bg(team)}
             </span>
             <span class="team-meta">${teamMatchesPlayed(team)} мача</span>
           </div>
@@ -313,14 +369,14 @@ function renderMatches() {
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
           <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          ${match.home}
+          ${bg(match.home)}
         </strong>
         <input inputmode="numeric" min="0" type="number" value="${score.home}" aria-label="${match.home}" disabled>
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
           <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          ${match.away}
+          ${bg(match.away)}
         </strong>
         <input inputmode="numeric" min="0" type="number" value="${score.away}" aria-label="${match.away}" disabled>
       </div>
@@ -365,14 +421,14 @@ function renderBets() {
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
           <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          ${match.home}
+          ${bg(match.home)}
         </strong>
         <input class="bet-input" data-match-id="${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="${bet.home}" aria-label="${match.home}">
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
           <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          ${match.away}
+          ${bg(match.away)}
         </strong>
         <input class="bet-input" data-match-id="${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="${bet.away}" aria-label="${match.away}">
       </div>
@@ -428,7 +484,7 @@ function renderStandings() {
             <tr>
               <td style="display: flex; align-items: center; gap: 6px;">
                 <img src="${getFlagUrl(row.team)}" alt="" style="width: 16px; border-radius: 2px;">
-                ${row.team}
+                ${bg(row.team)}
               </td>
               <td>${row.played}</td>
               <td>${row.goalDifference}</td>
@@ -529,8 +585,8 @@ function teamMatchesPlayed(team) {
 function matchResultText(match, score) {
   const home = Number(score.home);
   const away = Number(score.away);
-  if (home > away) return `${match.home} печели`;
-  if (away > home) return `${match.away} печели`;
+  if (home > away) return `${bg(match.home)} печели`;
+  if (away > home) return `${bg(match.away)} печели`;
   return "Равенство";
 }
 
