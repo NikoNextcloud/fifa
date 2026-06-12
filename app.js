@@ -338,16 +338,7 @@ function renderMatches() {
     const groupMatches = state.groupFilter === "all" || match.group === state.groupFilter;
     const statusMatches = state.statusFilter === "all" || (state.statusFilter === "played" ? played : !played);
     return groupMatches && statusMatches;
-  }).sort((a, b) => {
-    const aPlayed = isPlayed(state.scores[a.id]);
-    const bPlayed = isPlayed(state.scores[b.id]);
-    // Предстоящите отгоре по дата и час, изиграните накрая
-    if (!aPlayed && bPlayed) return -1;
-    if (aPlayed && !bPlayed) return 1;
-    // В рамките на една и съща група — по дата, после по час
-    if (a.dateNum !== b.dateNum) return a.dateNum - b.dateNum;
-    return a.timeNum - b.timeNum;
-  });
+  }).sort((a, b) => a.dateNum - b.dateNum || a.timeNum - b.timeNum);
 
   visibleMatches.forEach((match) => {
     const score = state.scores[match.id] || { home: "", away: "" };
