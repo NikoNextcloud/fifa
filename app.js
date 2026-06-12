@@ -70,13 +70,29 @@ const groupDates = {
   L: ["17 юни", "17 юни", "23 юни", "23 юни", "27 юни", "27 юни"]
 };
 
+// Числова стойност на дата за сортиране (ден от юни 2026)
+const groupDateNums = {
+  A: [11, 12, 18, 18, 24, 24],
+  B: [12, 13, 18, 18, 24, 24],
+  C: [13, 13, 19, 19, 24, 24],
+  D: [12, 13, 19, 19, 25, 25],
+  E: [14, 14, 20, 20, 25, 25],
+  F: [14, 14, 20, 20, 25, 25],
+  G: [15, 15, 21, 21, 26, 26],
+  H: [15, 15, 21, 21, 26, 26],
+  I: [16, 16, 22, 22, 26, 26],
+  J: [16, 16, 22, 22, 27, 27],
+  K: [17, 17, 23, 23, 27, 27],
+  L: [17, 17, 23, 23, 27, 27]
+};
+
 const matchDetails = [
-  { time: "22:00 ч.", location: "Мексико, Дистрито Федерал (Estadio Azteca)" },
-  { time: "01:00 ч.", location: "САЩ, Калифорния (SoFi Stadium)" },
-  { time: "19:00 ч.", location: "Канада, Онтарио (BMO Field)" },
-  { time: "23:00 ч.", location: "САЩ, Тексас (AT&T Stadium)" },
-  { time: "18:00 ч.", location: "САЩ, Ню Йорк / Ню Джърси (MetLife Stadium)" },
-  { time: "21:00 ч.", location: "САЩ, Флорида (Hard Rock Stadium)" }
+  { time: "22:00 ч.", timeNum: 2200, location: "Мексико, Дистрито Федерал (Estadio Azteca)" },
+  { time: "01:00 ч.", timeNum: 100,  location: "САЩ, Калифорния (SoFi Stadium)" },
+  { time: "19:00 ч.", timeNum: 1900, location: "Канада, Онтарио (BMO Field)" },
+  { time: "23:00 ч.", timeNum: 2300, location: "САЩ, Тексас (AT&T Stadium)" },
+  { time: "18:00 ч.", timeNum: 1800, location: "САЩ, Ню Йорк / Ню Джърси (MetLife Stadium)" },
+  { time: "21:00 ч.", timeNum: 2100, location: "САЩ, Флорида (Hard Rock Stadium)" }
 ];
 
 const pairings = [
@@ -123,7 +139,9 @@ const matches = Object.entries(groups).flatMap(([group, teams]) =>
     id: `${group}-${index + 1}`,
     group,
     date: groupDates[group][index],
+    dateNum: groupDateNums[group][index],
     time: matchDetails[index].time,
+    timeNum: matchDetails[index].timeNum,
     location: matchDetails[index].location,
     home: teams[homeIndex],
     away: teams[awayIndex]
@@ -267,9 +285,12 @@ function renderMatches() {
   }).sort((a, b) => {
     const aPlayed = isPlayed(state.scores[a.id]);
     const bPlayed = isPlayed(state.scores[b.id]);
-    if (aPlayed && !bPlayed) return 1;
+    // Предстоящите отгоре по дата и час, изиграните накрая
     if (!aPlayed && bPlayed) return -1;
-    return 0;
+    if (aPlayed && !bPlayed) return 1;
+    // В рамките на една и съща група — по дата, после по час
+    if (a.dateNum !== b.dateNum) return a.dateNum - b.dateNum;
+    return a.timeNum - b.timeNum;
   });
 
   visibleMatches.forEach((match) => {
