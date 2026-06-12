@@ -176,7 +176,7 @@ function setView(name) {
   Object.entries(views).forEach(([viewName, element]) => {
     if (element) {
       if (viewName === name) {
-        element.style.display = "block";
+        element.style.display = (viewName === "groups") ? "grid" : "block";
       } else {
         element.style.display = "none";
       }

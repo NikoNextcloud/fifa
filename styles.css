@@ -1,12 +1,38 @@
-/* Модерно и сигурно подреждане в 3 колони, което уважава JavaScript превключването */
+
+/* Поправка за подреждането в 3 колони на групите */
 #groupsView {
-  display: none; /* По подразбиране е скрит, докато JS не го покаже */
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
-/* Когато JavaScript активира изгледа (премахне display: none или добави клас/стил), 
-   активираме 3-те колони без да пречим на функцията за скриване */
-#groupsView:not([style*="display: none"]):not([style*="display: none"]) {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
+/* Стил за правилно оразмеряване на логото в хедъра */
+.hero-logo {
+  display: block;
+  width: 140px;
+  height: auto;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  object-fit: contain;
+}
+
+/* Адаптивност за средни екрани (таблети) */
+@media (max-width: 1024px) {
+  #groupsView {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Адаптивност за малки екрани (мобилни телефони) */
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  .hero-logo {
+    width: 120px;
+  }
+  #groupsView {
+    grid-template-columns: 1fr;
+  }
 }
