@@ -353,32 +353,32 @@ function renderMatches() {
         <span class="match-meta">Група ${match.group} • ${match.date} в ${match.time}</span>
         <span class="status ${played ? "result-badge" : ""}">${played ? "Изигран" : "Предстоящ"}</span>
       </div>
-      <div style="font-size: 11px; color: rgba(255,255,255,0.38); margin-bottom: 14px; display: flex; align-items: center; gap: 5px;">
+      <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 4px;">
         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
         ${match.location}
       </div>
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="${getFlagUrl(match.home)}" alt="" style="width: 26px; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+          <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.home)}
         </strong>
         <input inputmode="numeric" min="0" type="number" value="${score.home}" aria-label="${match.home}" disabled>
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="${getFlagUrl(match.away)}" alt="" style="width: 26px; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+          <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.away)}
         </strong>
         <input inputmode="numeric" min="0" type="number" value="${score.away}" aria-label="${match.away}" disabled>
       </div>
       
-      <div class="score-actions" style="flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 14px; padding-top: 12px;">
+      <div class="score-actions" style="flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px;">
         ${played ? `
-          <span class="status" style="color: #35c08a; font-weight: 800; font-size: 13px; letter-spacing: 0.3px;">✓ ${matchResultText(match, score)}</span>
+          <span class="status" style="color: var(--green); font-weight: bold;">Краен резултат: ${matchResultText(match, score)}</span>
         ` : `
           <div style="width: 100%;">
-            <span class="status" style="font-size: 11px; color: #f0c56a; font-weight: 700; letter-spacing: 0.3px;">⚽ Вероятност за победа:</span>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #fff; margin-top: 4px; background: rgba(255,255,255,0.06); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.07);">
+            <span class="status" style="font-size: 11px; color: var(--gold);">📊 Вероятност за победа (Matchstory):</span>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #fff; margin-top: 4px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px;">
               <span>1 (${match.home}): <b>${story.homeWin}%</b></span>
               <span>X (Равен): <b>${story.draw}%</b></span>
               <span>2 (${match.away}): <b>${story.awayWin}%</b></span>
@@ -411,14 +411,14 @@ function renderBets() {
       </div>
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="${getFlagUrl(match.home)}" alt="" style="width: 26px; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+          <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.home)}
         </strong>
         <input class="bet-input" data-match-id="${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="${bet.home}" aria-label="${match.home}">
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="${getFlagUrl(match.away)}" alt="" style="width: 26px; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+          <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.away)}
         </strong>
         <input class="bet-input" data-match-id="${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="${bet.away}" aria-label="${match.away}">
