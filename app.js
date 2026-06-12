@@ -146,7 +146,7 @@ const matches = Object.entries(groups).flatMap(([group, teams]) =>
     home: teams[homeIndex],
     away: teams[awayIndex]
   }))
-);
+).sort((a, b) => a.dateNum - b.dateNum || a.timeNum - b.timeNum);
 
 const state = {
   scores: {},
