@@ -264,6 +264,12 @@ function renderMatches() {
     const groupMatches = state.groupFilter === "all" || match.group === state.groupFilter;
     const statusMatches = state.statusFilter === "all" || (state.statusFilter === "played" ? played : !played);
     return groupMatches && statusMatches;
+  }).sort((a, b) => {
+    const aPlayed = isPlayed(state.scores[a.id]);
+    const bPlayed = isPlayed(state.scores[b.id]);
+    if (aPlayed && !bPlayed) return 1;
+    if (!aPlayed && bPlayed) return -1;
+    return 0;
   });
 
   visibleMatches.forEach((match) => {
