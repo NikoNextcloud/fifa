@@ -107,19 +107,6 @@ const matchDetails = [
 
 const pairings = [ [0, 1], [2, 3], [0, 2], [3, 1], [3, 0], [1, 2] ];
 
-const WC_API_BASE = "https://worldcup26.ir";
-const refreshEveryMs = 60000;
-
-const apiNameMap = {
-  "South Korea": "South Korea", "Czech Republic": "Czechia", "Bosnia": "Bosnia and Herzegovina",
-  "Curaçao": "Curacao", "Ivory Coast": "Ivory Coast", "DR Congo": "DR Congo",
-  "Türkiye": "Turkey", "Turkiye": "Turkey"
-};
-
-function normalizeApiTeamName(name) {
-  return apiNameMap[name] || name;
-}
-
 const matches = Object.entries(groups).flatMap(([group, teams]) =>
   pairings.map(([homeIndex, awayIndex], index) => ({
     id: `${group}-${index + 1}`,
@@ -133,13 +120,6 @@ const matches = Object.entries(groups).flatMap(([group, teams]) =>
     away: teams[awayIndex]
   }))
 ).sort((a, b) => a.dateNum - b.dateNum || a.timeNum - b.timeNum);
-
-function findMatchId(homeEn, awayEn) {
-  const home = normalizeApiTeamName(homeEn);
-  const away = normalizeApiTeamName(awayEn);
-  const found = matches.find(m => m.home === home && m.away === away);
-  return found ? found.id : null;
-}
 
 const state = {
   scores: {},
@@ -210,7 +190,7 @@ function getFlagUrl(teamName) {
 }
 
 function isPlayed(score) {
-  return score && score.home !== "" && score.away !== "" && Number.isFinite(Number(score.home)) && Number.isFinite(Number(score.away));
+  return score && score.home !== undefined && score.away !== undefined && score.home !== null && score.away !== null && score.home !== "" && score.away !== "";
 }
 
 function teamMatchesPlayed(team) {
@@ -291,25 +271,30 @@ function renderGroups() {
     const leader = bg(table[0]?.team) || "няма";
     const card = document.createElement("article");
     card.className = "group-card";
+    
+    let teamsHTML = teams.map((team) => {
+      return `
+        <div class="team-row" style="display:flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span class="team-name" style="display: flex; align-items: center; gap: 8px;">
+              <img src="${getFlagUrl(team)}" alt="" style="width: 20px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1)">
+              ${bg(team)}
+            </span>
+            <span class="team-meta">${teamMatchesPlayed(team)} мача</span>
+          </div>
+          <div style="font-size: 11px; color: var(--muted); padding-left: 28px;">
+            <span style="color: var(--gold)">★</span> ${teamKeyPlayers[team] || "В процес на обновяване"}
+          </div>
+        </div>
+      `;
+    }).join("");
+
     card.innerHTML = `
       <div class="group-title">
         <h2>Група ${group}</h2>
         <span class="pill">Лидер: ${leader}</span>
       </div>
-      \${teams.map((team) => `
-        <div class="team-row" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0;">
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <span class="team-name" style="display: flex; align-items: center; gap: 8px;">
-              <img src="\${getFlagUrl(team)}" alt="" style="width: 20px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1)">
-              \${bg(team)}
-            </span>
-            <span class="team-meta">\${teamMatchesPlayed(team)} мача</span>
-          </div>
-          <div style="font-size: 11px; color: var(--muted); padding-left: 28px;">
-            <span style="color: var(--gold)">★</span> \${teamKeyPlayers[team] || "В процес на обновяване"}
-          </div>
-        </div>
-      `).join("")}
+      ${teamsHTML}
     `;
     groupsView.append(card);
   });
@@ -341,37 +326,37 @@ function renderMatches() {
 
     card.innerHTML = `
       <div class="match-top">
-        <span class="match-meta">Група \${match.group} • \${match.date} в \${match.time}</span>
-        <span class="status \${played ? "result-badge" : ""}">\${played ? "Изигран" : "Предстоящ"}</span>
+        <span class="match-meta">Група ${match.group} • ${match.date} в ${match.time}</span>
+        <span class="status ${played ? "result-badge" : ""}">${played ? "Изигран" : "Предстоящ"}</span>
       </div>
       <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 4px;">
         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-        \${match.location}
+        ${match.location}
       </div>
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="\${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          \${bg(match.home)}
+          <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
+          ${bg(match.home)}
         </strong>
-        <input inputmode="numeric" min="0" type="number" value="\${score.home}" disabled>
+        <input inputmode="numeric" min="0" type="number" value="${score.home !== undefined ? score.home : ""}" disabled>
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="\${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          \${bg(match.away)}
+          <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
+          ${bg(match.away)}
         </strong>
-        <input inputmode="numeric" min="0" type="number" value="\${score.away}" disabled>
+        <input inputmode="numeric" min="0" type="number" value="${score.away !== undefined ? score.away : ""}" disabled>
       </div>
-      <div class="score-actions" style="flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px;">
-        \${played ? `
-          <span class="status" style="color: var(--green); font-weight: bold;">Краен резултат: \${matchResultText(match, score)}</span>
+      <div class="score-actions" style="display:flex; flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px;">
+        ${played ? `
+          <span class="status" style="color: var(--green); font-weight: bold;">Краен резултат: ${matchResultText(match, score)}</span>
         ` : `
           <div style="width: 100%;">
             <span class="status" style="font-size: 11px; color: var(--gold);">📊 Вероятност за победа (Matchstory):</span>
             <div style="display: flex; justify-content: space-between; font-size: 11px; color: #fff; margin-top: 4px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px;">
-              <span>1 (\${bg(match.home)}): <b>\${story.homeWin}%</b></span>
-              <span>X (Равен): <b>\${story.draw}%</b></span>
-              <span>2 (\${bg(match.away)}): <b>\${story.awayWin}%</b></span>
+              <span>1 (${bg(match.home)}): <b>${story.homeWin}%</b></span>
+              <span>X (Равен): <b>${story.draw}%</b></span>
+              <span>2 (${bg(match.away)}): <b>${story.awayWin}%</b></span>
             </div>
           </div>
         `}
@@ -392,40 +377,48 @@ function renderBets() {
     const card = document.createElement("article");
     card.className = "match-card";
 
+    let actionsHTML = "";
+    if (played) {
+      const hasBet = bet.home !== "" && bet.away !== "";
+      if (!hasBet) {
+        actionsHTML = `<span class="status" style="color: var(--muted)">Няма направена прогноза</span>`;
+      } else {
+        const exact = Number(bet.home) === score.home && Number(bet.away) === score.away;
+        const betWinner = Number(bet.home) > Number(bet.away) ? match.home : Number(bet.away) > Number(bet.home) ? match.away : "draw";
+        const realWinner = score.home > score.away ? match.home : score.away > score.home ? match.away : "draw";
+        const correctResult = betWinner === realWinner;
+        actionsHTML = `
+          <span class="status">Прогноза: <b style="color:var(--gold)">${bet.home} : ${bet.away}</b> &nbsp;|&nbsp; Реално: <b style="color:#fff">${score.home} : ${score.away}</b></span>
+          <span class="status" style="font-weight: bold; color: ${exact ? "var(--green)" : correctResult ? "var(--blue)" : "var(--red)"}">
+            ${exact ? "✅ Точен резултат!" : correctResult ? "🟡 Верен победител" : "❌ Не позна"}
+          </span>
+        `;
+      }
+    } else {
+      actionsHTML = `<span class="status" style="color: var(--muted)">Мачът не е изигран</span>`;
+    }
+
     card.innerHTML = `
       <div class="match-top">
-        <span class="match-meta">Група \${match.group} • \${match.date} в \${match.time}</span>
+        <span class="match-meta">Група ${match.group} • ${match.date} в ${match.time}</span>
         <span class="status" style="color: var(--gold)">Прогноза</span>
       </div>
       <div class="score-line" style="margin-bottom: 6px;">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="\${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          \${bg(match.home)}
+          <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
+          ${bg(match.home)}
         </strong>
-        <input class="bet-input" data-match-id="\${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="\${bet.home}" \${played ? "disabled" : ""}>
+        <input class="bet-input" data-match-id="${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="${bet.home}" ${played ? "disabled" : ""}>
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
-          <img src="\${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
-          \${bg(match.away)}
+          <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
+          ${bg(match.away)}
         </strong>
-        <input class="bet-input" data-match-id="\${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="\${bet.away}" \${played ? "disabled" : ""}>
+        <input class="bet-input" data-match-id="${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="${bet.away}" ${played ? "disabled" : ""}>
       </div>
       <div class="score-actions" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        \${played ? (() => {
-          const hasBet = bet.home !== "" && bet.away !== "";
-          if (!hasBet) return `<span class="status" style="color: var(--muted)">Няма направена прогноза</span>`;
-          const exact = Number(bet.home) === score.home && Number(bet.away) === score.away;
-          const betWinner = Number(bet.home) > Number(bet.away) ? match.home : Number(bet.away) > Number(bet.home) ? match.away : "draw";
-          const realWinner = score.home > score.away ? match.home : score.away > score.home ? match.away : "draw";
-          const correctResult = betWinner === realWinner;
-          return `
-            <span class="status">Прогноза: <b style="color:var(--gold)">\${bet.home} : \${bet.away}</b> &nbsp;|&nbsp; Реално: <b style="color:var(--ink)">\${score.home} : \${score.away}</b></span>
-            <span class="status" style="font-weight: bold; color: \${exact ? "var(--green)" : correctResult ? "var(--blue)" : "var(--red)"}">
-              \${exact ? "✅ Точен резултат!" : correctResult ? "🟡 Верен победител" : "❌ Не позна"}
-            </span>
-          `;
-        })() : `<span class="status" style="color: var(--muted)">Мачът не е изигран</span>`}
+        ${actionsHTML}
       </div>
     `;
 
@@ -451,8 +444,23 @@ function renderStandings() {
     const table = calculateTable(group);
     const card = document.createElement("article");
     card.className = "table-card";
+    
+    let tableRowsHTML = table.map((row) => {
+      return `
+        <tr style="border-top: 1px solid rgba(255,255,255,0.04);">
+          <td style="padding: 8px 0; display: flex; align-items: center; gap: 6px;">
+            <img src="${getFlagUrl(row.team)}" alt="" style="width: 16px; border-radius: 2px;">
+            ${bg(row.team)}
+          </td>
+          <td>${row.played}</td>
+          <td>${row.goalDifference}</td>
+          <td style="font-weight: bold; color: var(--gold);">${row.points}</td>
+        </tr>
+      `;
+    }).join("");
+
     card.innerHTML = `
-      <h2>Група \${group}</h2>
+      <h2>Група ${group}</h2>
       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <thead>
           <tr style="color: var(--muted); text-align: left;">
@@ -463,17 +471,7 @@ function renderStandings() {
           </tr>
         </thead>
         <tbody>
-          \${table.map((row) => `
-            <tr style="border-top: 1px solid rgba(255,255,255,0.04);">
-              <td style="padding: 8px 0; display: flex; align-items: center; gap: 6px;">
-                <img src="\${getFlagUrl(row.team)}" alt="" style="width: 16px; border-radius: 2px;">
-                \${bg(row.team)}
-              </td>
-              <td>\${row.played}</td>
-              <td>\${row.goalDifference}</td>
-              <td style="font-weight: bold; color: var(--gold);">\${row.points}</td>
-            </tr>
-          `).join("")}
+          ${tableRowsHTML}
         </tbody>
       </table>
     `;
@@ -490,10 +488,10 @@ function renderProgress() {
   }, 0);
   const percent = Math.round((played / matches.length) * 100);
 
-  if (playedCount) playedCount.textContent = `\${played}/\${matches.length}`;
+  if (playedCount) playedCount.textContent = `${played}/${matches.length}`;
   if (goalsCount) goalsCount.textContent = goals;
-  if (progressPercent) progressPercent.textContent = `\${percent}%`;
-  if (progressFill) progressFill.style.width = `\${percent}%`;
+  if (progressPercent) progressPercent.textContent = `${percent}%`;
+  if (progressFill) progressFill.style.width = `${percent}%`;
   if (stageLabel) stageLabel.textContent = played < matches.length ? "Групи" : "Елиминации";
 }
 
@@ -508,35 +506,24 @@ function renderAll() {
 async function updateResults() {
   if (syncStatus) syncStatus.textContent = "Обновяване...";
   try {
-    const response = await fetch(`\${WC_API_BASE}/api/v1/get/games`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP \${response.status}`);
+    // Reading from localized relative URL which works cleanly anywhere (local folder or GitHub Pages)
+    const response = await fetch("results.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    const games = data.games || data || [];
-
-    const newScores = {};
-    games.forEach(game => {
-      const finished = game.finished === "TRUE" || game.finished === true || game.time_elapsed === "finished";
-      const live = game.time_elapsed && game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished";
-
-      if (!finished && !live) return;
-
-      const matchId = findMatchId(game.home_team_name_en, game.away_team_name_en);
-      if (!matchId) return;
-
-      const home = parseInt(game.home_score, 10);
-      const away = parseInt(game.away_score, 10);
-      if (Number.isFinite(home) && Number.isFinite(away)) {
-        newScores[matchId] = { home, away };
-      }
-    });
-
-    state.scores = newScores;
-    state.lastUpdated = new Date().toISOString();
+    
+    // Parse user's specific results.json format: { "matches": { "A-1": { "home": 2, "away": 0 } } }
+    if (data && data.matches) {
+      state.scores = data.matches;
+    }
+    
+    state.lastUpdated = data.updatedAt || new Date().toISOString();
     renderAll();
-    if (syncStatus) syncStatus.textContent = `Последно: \${formatSyncTime(state.lastUpdated)}`;
+    if (syncStatus) syncStatus.textContent = `Последно: ${formatSyncTime(state.lastUpdated)}`;
   } catch (error) {
-    console.error("FIFA API грешка:", error);
-    if (syncStatus) syncStatus.textContent = "Локален режим";
+    console.error("Грешка при четене на резултати:", error);
+    if (syncStatus) syncStatus.textContent = "Локален JSON";
+    // Fallback: render anyway so it never stays blank!
+    renderAll();
   }
 }
 
@@ -551,13 +538,16 @@ function init() {
     Object.keys(groups).forEach((group) => {
       const option = document.createElement("option");
       option.value = group;
-      option.textContent = `Група \${group}`;
+      option.textContent = `Група ${group}`;
       groupFilter.append(option);
     });
   }
+  // Guarantee a first-pass render before fetching
   renderAll();
   setView("groups");
   updateResults();
-  setInterval(updateResults, refreshEveryMs);
+  setInterval(updateResults, 60000);
 }
-init();
+
+// Fire the application up safely
+document.addEventListener("DOMContentLoaded", init);
