@@ -1,10 +1,12 @@
-/* Промяна: Гридът се задейства само когато елементът НЕ е скрит от JavaScript */
+/* Модерно и сигурно подреждане в 3 колони, което уважава JavaScript превключването */
 #groupsView {
+  display: none; /* По подразбиране е скрит, докато JS не го покаже */
   gap: 16px;
 }
 
-/* Когато JS покаже таба, той ще се подреди в 3 колони, а когато му даде display: none, ще се скрие безпроблемно */
-#groupsView:not([style*="display: none"]) {
+/* Когато JavaScript активира изгледа (премахне display: none или добави клас/стил), 
+   активираме 3-те колони без да пречим на функцията за скриване */
+#groupsView:not([style*="display: none"]):not([style*="display: none"]) {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
 }
