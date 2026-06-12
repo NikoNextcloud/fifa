@@ -364,18 +364,149 @@ button, select, input {
   #groupsView:not([style*="display: none"]) {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+
+  .matches-list, .standings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
+  .shell {
+    width: calc(100% - 16px);
+    padding: 12px 0;
+  }
+
   .hero {
     flex-direction: column;
     text-align: center;
     gap: 20px;
+    padding: 20px;
   }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
   .hero-logo {
     width: 120px;
   }
+
+  .hero-panel {
+    width: 100%;
+  }
+
   #groupsView:not([style*="display: none"]) {
     grid-template-columns: 1fr !important;
   }
+
+  .matches-list, .standings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .stats article {
+    padding: 12px;
+  }
+
+  .stats strong {
+    font-size: 18px;
+  }
+
+  /* Контроли: табове и филтри на отделни редове */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  .filters {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .filters select {
+    flex: 1 1 45%;
+  }
+
+  #syncStatus {
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* Елиминационна фаза: хоризонтално скролване с по-малки колони */
+  .bracket-column {
+    min-width: 160px;
+  }
+
+  .group-card, .table-card, .match-card {
+    padding: 12px;
+  }
 }
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 19px;
+  }
+
+  .hero .subtitle {
+    font-size: 13px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats article:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .tab {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+
+  .filters select {
+    flex: 1 1 100%;
+  }
+
+  .score-line input {
+    width: 40px;
+    height: 30px;
+  }
+
+  .group-title h2 {
+    font-size: 14px;
+  }
+
+  .match-meta {
+    font-size: 10px;
+  }
+
+  /* Редовете с прогнози/резултати в Залози: пренасяне на нов ред */
+  .score-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .score-actions .status {
+    width: 100%;
+  }
+}
+
