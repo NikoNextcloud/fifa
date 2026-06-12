@@ -29,9 +29,10 @@
 
 ```json
 {
-  "updatedAt": "2026-06-11T20:10:00Z",
+  "updatedAt": "2026-06-12T12:00:00Z",
   "matches": {
-    "A-1": { "home": 2, "away": 1 }
+    "A-1": { "home": 2, "away": 1 },
+    "A-2": { "home": 0, "away": 3 }
   }
 }
 ```
