@@ -2,8 +2,8 @@ name: Update FIFA Results
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # на всеки 30 минути
-  workflow_dispatch:          # позволява ръчно стартиране от GitHub UI
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   update:
@@ -13,17 +13,93 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Run update script
+      - name: Update results.json
         env:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-          SEASON: '2026'
-          LEAGUE_ID: '1'
-        run: node scripts/update-results.js
+        run: |
+          node - << 'EOF'
+          const fs = require("fs");
+          const path = require("path");
+
+          const API_KEY = process.env.API_FOOTBALL_KEY;
+          const SEASON = "2026";
+          const LEAGUE_ID = "1";
+
+          if (!API_KEY) {
+            console.error("ГРЕШКА: Липсва API_FOOTBALL_KEY secret.");
+            process.exit(1);
+          }
+
+          const groups = {
+            A: ["Mexico","South Africa","South Korea","Czechia"],
+            B: ["Canada","Bosnia and Herzegovina","Qatar","Switzerland"],
+            C: ["Brazil","Morocco","Haiti","Scotland"],
+            D: ["United States","Paraguay","Australia","Turkey"],
+            E: ["Germany","Curacao","Ivory Coast","Ecuador"],
+            F: ["Netherlands","Japan","Sweden","Tunisia"],
+            G: ["Belgium","Egypt","Iran","New Zealand"],
+            H: ["Spain","Cape Verde","Saudi Arabia","Uruguay"],
+            I: ["France","Senegal","Iraq","Norway"],
+            J: ["Argentina","Algeria","Austria","Jordan"],
+            K: ["Portugal","DR Congo","Uzbekistan","Colombia"],
+            L: ["England","Croatia","Ghana","Panama"]
+          };
+
+          const pairings = [[0,1],[2,3],[0,2],[3,1],[3,0],[1,2]];
+          const ourMatches = Object.entries(groups).flatMap(([group, teams]) =>
+            pairings.map(([h, a], idx) => ({ id: `${group}-${idx+1}`, home: teams[h], away: teams[a] }))
+          );
+
+          const nameAliases = {
+            "Czechia": ["Czech Republic"],
+            "United States": ["USA"],
+            "Ivory Coast": ["Côte d'Ivoire","Cote d'Ivoire"],
+            "South Korea": ["Korea Republic"],
+            "Bosnia and Herzegovina": ["Bosnia & Herzegovina","Bosnia"],
+            "Cape Verde": ["Cabo Verde"],
+            "DR Congo": ["Congo DR"]
+          };
+
+          function namesMatch(ourName, apiName) {
+            if (ourName.toLowerCase() === apiName.toLowerCase()) return true;
+            return (nameAliases[ourName] || []).some(a => a.toLowerCase() === apiName.toLowerCase());
+          }
+
+          async function main() {
+            const url = `https://v3.football.api-sports.io/fixtures?league=${LEAGUE_ID}&season=${SEASON}`;
+            const res = await fetch(url, { headers: { "x-apisports-key": API_KEY } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (data.errors && Object.keys(data.errors).length > 0)
+              throw new Error("API грешка: " + JSON.stringify(data.errors));
+
+            const fixtures = data.response || [];
+            console.log(`Получени ${fixtures.length} мача от API.`);
+
+            const matches = {};
+            const played = ["FT","AET","PEN","1H","2H","HT","ET","BT","P"];
+            for (const m of ourMatches) {
+              const f = fixtures.find(f =>
+                namesMatch(m.home, f.teams?.home?.name || "") &&
+                namesMatch(m.away, f.teams?.away?.name || "")
+              );
+              if (!f) continue;
+              const status = f.fixture?.status?.short;
+              const hg = f.goals?.home;
+              const ag = f.goals?.away;
+              if (played.includes(status) && hg !== null && ag !== null)
+                matches[m.id] = { home: hg, away: ag };
+            }
+
+            const json = JSON.stringify({ updatedAt: new Date().toISOString(), matches }, null, 2);
+            fs.mkdirSync("data", { recursive: true });
+            fs.writeFileSync("results.json", json, "utf-8");
+            fs.writeFileSync(path.join("data","results.json"), json, "utf-8");
+            console.log(`Записани резултати за ${Object.keys(matches).length} мача.`);
+          }
+
+          main().catch(e => { console.error(e.message); process.exit(1); });
+          EOF
 
       - name: Commit updated results
         run: |
