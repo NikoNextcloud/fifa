@@ -88,8 +88,35 @@ const pairings = [
   [1, 2]
 ];
 
-const resultsEndpoint = "data/results.json";
+// ============================================================
+// worldcup26.ir API конфигурация — без нужда от токен!
+// ============================================================
+const WC_API_BASE = "https://worldcup26.ir";
 const refreshEveryMs = 60000;
+
+// Съответствие между имена в API-то и имената в твоя проект
+const apiNameMap = {
+  "South Korea":     "South Korea",
+  "Czech Republic":  "Czechia",
+  "Bosnia":          "Bosnia and Herzegovina",
+  "Curaçao":         "Curacao",
+  "Ivory Coast":     "Ivory Coast",
+  "DR Congo":        "DR Congo",
+  "Türkiye":         "Turkey",
+  "Turkiye":         "Turkey",
+};
+
+function normalizeApiTeamName(name) {
+  return apiNameMap[name] || name;
+}
+
+// Намери match ID по двата отбора
+function findMatchId(homeEn, awayEn) {
+  const home = normalizeApiTeamName(homeEn);
+  const away = normalizeApiTeamName(awayEn);
+  const found = matches.find(m => m.home === home && m.away === away);
+  return found ? found.id : null;
+}
 
 const matches = Object.entries(groups).flatMap(([group, teams]) =>
   pairings.map(([homeIndex, awayIndex], index) => ({
@@ -485,31 +512,45 @@ function isPlayed(score) {
 }
 
 async function updateResults() {
-  if(syncStatus) syncStatus.textContent = "Обновяване...";
+  if (syncStatus) syncStatus.textContent = "Обновяване...";
 
   try {
-    const response = await fetch(`${resultsEndpoint}?t=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("Източникът не отговаря");
+    const response = await fetch(`${WC_API_BASE}/get/games`, {
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    state.scores = normalizeScores(data.matches || {});
-    state.lastUpdated = data.updatedAt || new Date().toISOString();
-    renderAll();
-    if(syncStatus) syncStatus.textContent = `Последно: ${formatSyncTime(state.lastUpdated)}`;
-  } catch (error) {
-    if(syncStatus) syncStatus.textContent = "Няма връзка с резултатите";
-  }
-}
+    const games = data.games || data || [];
 
-function normalizeScores(rawScores) {
-  return Object.fromEntries(
-    Object.entries(rawScores)
-      .filter(([, score]) => score && score.home !== undefined && score.away !== undefined)
-      .map(([matchId, score]) => [matchId, {
-        home: score.home === null ? "" : Number(score.home),
-        away: score.away === null ? "" : Number(score.away)
-      }])
-  );
+    const newScores = {};
+    games.forEach(game => {
+      const finished = game.finished === "TRUE" || game.finished === true
+                    || game.time_elapsed === "finished";
+      const live     = game.time_elapsed && game.time_elapsed !== "notstarted"
+                    && game.time_elapsed !== "finished";
+
+      if (!finished && !live) return; // предстоящ мач
+
+      const matchId = findMatchId(game.home_team_name_en, game.away_team_name_en);
+      if (!matchId) return;
+
+      const home = parseInt(game.home_score, 10);
+      const away = parseInt(game.away_score, 10);
+      if (Number.isFinite(home) && Number.isFinite(away)) {
+        newScores[matchId] = { home, away };
+      }
+    });
+
+    state.scores = newScores;
+    state.lastUpdated = new Date().toISOString();
+    renderAll();
+    if (syncStatus) syncStatus.textContent = `Последно: ${formatSyncTime(state.lastUpdated)}`;
+
+  } catch (error) {
+    console.error("FIFA API грешка:", error);
+    if (syncStatus) syncStatus.textContent = "Няма връзка с API";
+  }
 }
 
 function formatSyncTime(value) {
