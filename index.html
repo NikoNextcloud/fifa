@@ -15,8 +15,7 @@
           <p class="subtitle">Групи, мачове, резултати, прогрес и класиране в един ясен dashboard.</p>
         </div>
         <div class="hero-panel">
-          <img src="2026_FIFA_World_Cup_emblem.svg" alt="FIFA World Cup 2026" style="display:block; width: 160px; height: auto; margin: 0 auto 16px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));">
-          <span>Турнир</span>
+          <span style="color: var(--gold); font-weight: bold; margin-bottom: 6px; display: block;">СВЕТОВНО ПЪРВЕНСТВО</span>
           <strong>11 юни - 19 юли</strong>
           <small>48 отбора • 12 групи • 104 мача</small>
         </div>
@@ -26,72 +25,70 @@
         <article>
           <span>Изиграни мачове</span>
           <strong id="playedCount">0/72</strong>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <small id="progressPercent" style="color: var(--muted); font-size: 11px;">0% завършени</small>
+          </div>
         </article>
         <article>
-          <span>Голове</span>
+          <span>Общо голове</span>
           <strong id="goalsCount">0</strong>
         </article>
         <article>
-          <span>Активна фаза</span>
-          <strong id="stageLabel">Групи</strong>
+          <span>Текуща фаза</span>
+          <strong id="stageLabel" style="color: var(--gold);">Групова фаза</strong>
         </article>
       </section>
 
-      <section class="progress-wrap" aria-label="Визуален прогрес">
-        <div class="progress-head">
-          <span>Прогрес на груповата фаза</span>
-          <strong id="progressPercent">0%</strong>
-        </div>
-        <div class="progress-bar">
-          <div id="progressFill" class="progress-fill"></div>
+      <nav class="tabs" aria-label="Основна навигация">
+        <button class="tab active" data-view="groups">Групи и Класиране</button>
+        <button class="tab" data-view="matches">Мачове (Live Синк)</button>
+        <button class="tab" data-view="bracket">Елиминации</button>
+        <button class="tab" data-view="bets">Моите Прогнози</button>
+      </nav>
+
+      <section id="groupsView" class="view active">
+        <div id="standingsGrid" class="groups-grid">
+          <!-- Групите се рендерират тук динамично чрез JavaScript -->
         </div>
       </section>
-
-      <div class="controls">
-        <nav class="tabs">
-          <button class="tab active" data-view="groups">Групи</button>
-          <button class="tab" data-view="matches">Мачове</button>
-          <button class="tab" data-view="standings">Класиране</button>
-          <button class="tab" data-view="bracket">Елиминации</button>
-          <button class="tab" data-view="bets">Залози</button>
-        </nav>
-
-        <div class="filters">
-          <select id="groupFilter" aria-label="Филтър по група">
-            <option value="all">Всички групи</option>
-          </select>
-          <select id="statusFilter" aria-label="Филтър по статус">
-            <option value="all">Всички мачове</option>
-            <option value="played">Изиграни</option>
-            <option value="upcoming">Предстоящи</option>
-          </select>
-          <strong id="syncStatus">Подготовка...</strong>
-        </div>
-      </div>
-
-      <section id="groupsView" class="view active-view"></section>
 
       <section id="matchesView" class="view">
-        <div id="matchesList" class="matches-list"></div>
-      </section>
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label for="groupFilter">Група:</label>
+            <select id="groupFilter">
+              <option value="all">Всички групи</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="statusFilter">Статус:</label>
+            <select id="statusFilter">
+              <option value="all">Всички</option>
+              <option value="played">Изиграни</option>
+              <option value="upcoming">Предстоящи</option>
+            </select>
+          </div>
+          <div id="syncStatus" class="sync-badge">Синхронизиране...</div>
+        </div>
 
-      <section id="standingsView" class="view">
-        <div id="standingsGrid" class="standings-grid"></div>
+        <div id="matchesList" class="matches-list">
+          <!-- Мачовете се рендерират динамично тук -->
+        </div>
       </section>
 
       <section id="bracketView" class="view">
         <div class="modern-bracket-container">
           <div class="bracket-column">
             <div class="column-header">1/16 Финали</div>
-            <div class="bracket-match"><div class="bracket-team">Победител А</div><div class="bracket-team">Трети C/D/E</div></div>
-            <div class="bracket-match"><div class="bracket-team">Победител B</div><div class="bracket-team">Втори F</div></div>
-            <div class="bracket-match"><div class="bracket-team">Победител C</div><div class="bracket-team">Трети A/B/F</div></div>
-            <div class="bracket-match"><div class="bracket-team">Победител D</div><div class="bracket-team">Втори E</div></div>
+            <div class="bracket-match"><div class="bracket-team">1A</div><div class="bracket-team">2B</div></div>
+            <div class="bracket-match"><div class="bracket-team">1C</div><div class="bracket-team">3A/B/F</div></div>
           </div>
           <div class="bracket-column">
             <div class="column-header">1/8 Финали</div>
-            <div class="bracket-match"><div class="bracket-team">Победител Мач 1</div><div class="bracket-team">Победител Мач 2</div></div>
-            <div class="bracket-match"><div class="bracket-team">Победител Мач 3</div><div class="bracket-team">Победител Мач 4</div></div>
+            <div class="bracket-match"><div class="bracket-team">Победител 1/16-1</div><div class="bracket-team">Победител 1/16-2</div></div>
           </div>
           <div class="bracket-column">
             <div class="column-header">Четвъртфинали</div>
@@ -114,12 +111,14 @@
       <section id="betsView" class="view">
         <div class="bets-header" style="margin-bottom: 20px; background: var(--panel); padding: 16px; border-radius: 8px; border: 1px solid var(--line);">
           <h2 style="margin: 0 0 6px 0; color: var(--gold);">Моите Лични Прогнози</h2>
-          <p style="color: var(--muted); font-size: 13px; margin: 0;">Тук можеш да попълниш твоите очаквания за мачовете. Резултатите се запазват автоматично във вашия браузър и се сравняват с официалните.</p>
+          <p style="color: var(--muted); font-size: 13px; margin: 0;">Тук можеш да попълниш твоите очаквания за мачовете независимо от официалното API.</p>
         </div>
-        <div id="betsList" class="matches-list"></div>
+        <div id="betsList" class="bets-list">
+          <!-- Прогнозите ще се генерират тук -->
+        </div>
       </section>
-
     </main>
+
     <script src="app.js"></script>
   </body>
 </html>
