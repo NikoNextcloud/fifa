@@ -37,6 +37,7 @@ body {
 .hero-panel { background: rgba(0,0,0,0.2); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--line); }
 .hero-panel strong { display: block; font-size: 18px; color: var(--gold); margin: 4px 0; }
 
+/* СТИЛ ЗА ЛОГОТО */
 .hero-logo {
   display: block;
   width: 140px;
@@ -66,11 +67,11 @@ body {
 
 .view { display: none; }
 
-/* Подреждане на групите в точно 3 колони за десктоп */
+/* НАСТРОЙКА ЗА 3-ТЕ КОЛОНИ НА ГРУПИТЕ СЪС ЗАЩИТА */
 #groupsView { 
-  display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 16px; 
+  display: grid !important; 
+  grid-template-columns: repeat(3, 1fr) !important; 
+  gap: 16px !important; 
 }
 
 .group-card, .table-card, .match-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
@@ -89,10 +90,10 @@ body {
 .bracket-match { background: var(--panel); border: 1px solid var(--line); padding: 10px; border-radius: 6px; }
 .bracket-team { font-size: 13px; padding: 2px 0; }
 
-/* Медия заявки за перфектна адаптивност на по-малки екрани */
+/* АДАПТИВНОСТ ЗА ТАБЛЕТИ И ТЕЛЕФОНИ */
 @media (max-width: 1024px) {
   #groupsView {
-    grid-template-columns: repeat(2, 1fr); /* 2 колони на таблети */
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
@@ -100,6 +101,6 @@ body {
   .hero { flex-direction: column; text-align: center; gap: 20px; }
   .hero-logo { width: 120px; }
   #groupsView {
-    grid-template-columns: 1fr; /* 1 колона на телефони */
+    grid-template-columns: 1fr !important;
   }
 }
