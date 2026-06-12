@@ -414,22 +414,31 @@ function renderBets() {
           <img src="${getFlagUrl(match.home)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.home)}
         </strong>
-        <input class="bet-input" data-match-id="${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="${bet.home}" aria-label="${match.home}">
+        <input class="bet-input" data-match-id="${match.id}" data-type="home" inputmode="numeric" min="0" type="number" value="${bet.home}" aria-label="${match.home}" ${played ? "disabled" : ""}>
       </div>
       <div class="score-line">
         <strong style="display: flex; align-items: center; gap: 8px;">
           <img src="${getFlagUrl(match.away)}" alt="" style="width: 24px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1)">
           ${bg(match.away)}
         </strong>
-        <input class="bet-input" data-match-id="${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="${bet.away}" aria-label="${match.away}">
+        <input class="bet-input" data-match-id="${match.id}" data-type="away" inputmode="numeric" min="0" type="number" value="${bet.away}" aria-label="${match.away}" ${played ? "disabled" : ""}>
       </div>
       <div class="score-actions" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        ${played ? `
-          <span class="status">Реално: <b style="color:var(--ink)">${score.home} : ${score.away}</b></span>
-          <span class="status" style="font-weight: bold; color: ${(Number(bet.home) === score.home && Number(bet.away) === score.away) ? 'var(--green)' : 'var(--red)'}">
-            ${(Number(bet.home) === score.home && Number(bet.away) === score.away) ? "✅ Точен!" : "❌ Не позна"}
-          </span>
-        ` : `<span class="status" style="color: var(--muted)">Мачът не е изигран</span>`}
+        ${played ? (() => {
+          const hasBet = bet.home !== "" && bet.away !== "";
+          if (!hasBet) return \`<span class="status" style="color: var(--muted)">Няма направена прогноза</span>\`;
+          const exact = Number(bet.home) === score.home && Number(bet.away) === score.away;
+          const betHome = Number(bet.home); const betAway = Number(bet.away);
+          const betWinner = betHome > betAway ? match.home : betAway > betHome ? match.away : "draw";
+          const realWinner = score.home > score.away ? match.home : score.away > score.home ? match.away : "draw";
+          const correctResult = betWinner === realWinner;
+          return \`
+            <span class="status">Прогноза: <b style="color:var(--gold)">\${bet.home} : \${bet.away}</b> &nbsp;|&nbsp; Реално: <b style="color:var(--ink)">\${score.home} : \${score.away}</b></span>
+            <span class="status" style="font-weight: bold; color: \${exact ? "var(--green)" : correctResult ? "var(--blue)" : "var(--red)"}">
+              \${exact ? "✅ Точен резултат!" : correctResult ? "🟡 Верен победител" : "❌ Не позна"}
+            </span>
+          \`;
+        })() : \`<span class="status" style="color: var(--muted)">Мачът не е изигран</span>\`}
       </div>
     `;
 
