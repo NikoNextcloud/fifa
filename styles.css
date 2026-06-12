@@ -316,10 +316,18 @@ input {
 }
 
 .match-card {
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  padding: 22px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #0f1e26, #162b36);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  color: #f0f4f7;
+}
+
+.match-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 .match-top {
@@ -330,9 +338,14 @@ input {
 }
 
 .match-meta {
-  color: var(--muted);
+  color: rgba(255,255,255,0.45);
   font-size: 11px;
   font-weight: bold;
+  letter-spacing: 0.3px;
+}
+
+.match-card .location-row {
+  color: rgba(255,255,255,0.35);
 }
 
 .status {
@@ -346,31 +359,34 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .score-line strong {
-  font-size: 15px;
+  font-size: 16px;
+  color: #f0f4f7;
+  font-weight: 700;
 }
 
 .score-line input {
-  width: 48px;
-  height: 36px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f4f6f8;
-  color: var(--ink);
-  font-size: 18px;
+  width: 52px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: #ffffff;
+  font-size: 20px;
   font-weight: 900;
   text-align: center;
+  transition: border-color 0.15s;
 }
 
 .score-line input:disabled {
   opacity: 1;
   cursor: not-allowed;
-  color: var(--ink);
-  border-color: rgba(194, 138, 0, 0.4);
-  background: rgba(194, 138, 0, 0.07);
+  color: #f0c56a;
+  border-color: rgba(240, 197, 106, 0.5);
+  background: rgba(240, 197, 106, 0.10);
 }
 
 .score-actions {
@@ -382,13 +398,13 @@ input {
 }
 
 .status {
-  color: var(--muted);
+  color: rgba(255,255,255,0.4);
   font-size: 12px;
   font-weight: 900;
 }
 
 .result-badge {
-  color: var(--green);
+  color: #35c08a;
 }
 
 table {
@@ -504,4 +520,19 @@ th {
   border-color: var(--gold) !important;
   outline: none;
   box-shadow: 0 0 5px rgba(194, 138, 0, 0.2);
+}
+
+.upcoming-badge {
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.07);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.match-card .score-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 10px 0;
 }
