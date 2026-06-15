@@ -1,0 +1,512 @@
+/* FIFA WORLD 2026 - Пълен Дизайн и Стилизация */
+:root {
+  --bg: #142831;
+  --panel: #1b3541;
+  --panel-2: #234352;
+  --ink: #f0f4f6;
+  --muted: #8fa7b3;
+  --line: rgba(255, 255, 255, 0.12);
+  --gold: #f0c56a;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3498db;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button, select, input {
+  font: inherit;
+}
+
+.shell {
+  width: min(1200px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* Хедър / Hero блок */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, var(--panel), #102129);
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  margin: 4px 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.hero .eyebrow {
+  color: var(--gold);
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: bold;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.hero .subtitle {
+  color: var(--muted);
+  margin: 6px 0 0 0;
+  font-size: 14px;
+}
+
+.hero-panel {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid var(--line);
+}
+
+.hero-panel span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.hero-panel strong {
+  display: block;
+  font-size: 18px;
+  color: var(--gold);
+  margin: 4px 0;
+}
+
+.hero-panel small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hero-logo {
+  display: block;
+  width: 140px;
+  height: auto;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  object-fit: contain;
+}
+
+/* Статистически карти */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stats article {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.stats span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.stats strong {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* Прогрес лента */
+.progress-wrap {
+  background: var(--panel);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  background: var(--panel-2);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: var(--green);
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Контроли и Бутони (Табове) */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.tab {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 10px 16px;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  background: var(--panel-2);
+}
+
+.tab.active {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filters select {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 8px 12px;
+  border-radius: 6px;
+  outline: none;
+}
+
+/* Логика за показване и скриване на табовете */
+.view {
+  display: none;
+}
+
+/* Изолирано и твърдо правило за 3 колони за групите */
+#groupsView {
+  gap: 16px;
+}
+
+/* Когато JS премахне display:none и сложи друг стил, активираме чист Grid */
+#groupsView:not([style*="display: none"]) {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Общи структури за карти, групи и таблици */
+.group-card, .table-card, .match-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.group-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.group-title h2 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--gold);
+}
+
+.pill {
+  background: var(--panel-2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Списъци с мачове и класирания */
+.matches-list, .standings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+#matchesView:not([style*="display: none"]) {
+  display: grid !important;
+}
+
+#standingsView:not([style*="display: none"]) {
+  display: grid !important;
+}
+
+#bracketView:not([style*="display: none"]) {
+  display: block !important;
+}
+
+#betsView:not([style*="display: none"]) {
+  display: block !important;
+}
+
+.match-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.score-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.score-line input {
+  width: 46px;
+  height: 32px;
+  text-align: center;
+  background: var(--panel-2);
+  color: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+/* Стилизация на флагове и имена */
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Структура на елиминациите (Бракет) */
+.modern-bracket-container {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.bracket-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.column-header {
+  font-size: 11px;
+  text-align: center;
+  background: var(--panel-2);
+  padding: 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.bracket-match {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.bracket-team {
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+/* Адаптивност за мобилни устройства */
+@media (max-width: 1024px) {
+  #groupsView:not([style*="display: none"]) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .matches-list, .standings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .shell {
+    width: calc(100% - 16px);
+    padding: 12px 0;
+  }
+
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
+  .hero-logo {
+    width: 120px;
+  }
+
+  .hero-panel {
+    width: 100%;
+  }
+
+  #groupsView:not([style*="display: none"]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .matches-list, .standings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .stats article {
+    padding: 12px;
+  }
+
+  .stats strong {
+    font-size: 18px;
+  }
+
+  /* Контроли: табове и филтри на отделни редове */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  .filters {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .filters select {
+    flex: 1 1 45%;
+  }
+
+  #syncStatus {
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* Елиминационна фаза: хоризонтално скролване с по-малки колони */
+  .bracket-column {
+    min-width: 160px;
+  }
+
+  .group-card, .table-card, .match-card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 19px;
+  }
+
+  .hero .subtitle {
+    font-size: 13px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats article:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .tab {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+
+  .filters select {
+    flex: 1 1 100%;
+  }
+
+  .score-line input {
+    width: 40px;
+    height: 30px;
+  }
+
+  .group-title h2 {
+    font-size: 14px;
+  }
+
+  .match-meta {
+    font-size: 10px;
+  }
+
+  /* Редовете с прогнози/резултати в Залози: пренасяне на нов ред */
+  .score-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .score-actions .status {
+    width: 100%;
+  }
+}
+
