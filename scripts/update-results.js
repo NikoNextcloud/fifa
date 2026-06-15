@@ -1,19 +1,20 @@
 /**
  * update-results.js
  * ------------------
- * Тегли резултатите от World Cup 2026 от:
- * https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
+ * Тегли резултатите от World Cup 2026 от ESPN публичното API.
+ * БЕЗ API ключ, БЕЗ регистрация, работи от GitHub Actions.
  *
- * Напълно БЕЗПЛАТНО, без API ключ, работи от GitHub Actions.
+ * Endpoint: https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard
  */
 
 const fs   = require("fs");
 const path = require("path");
 
-const SOURCE_URL =
-  "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
+const ESPN_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" +
+  "?limit=200&dates=20260611-20260719";
 
-// ---- Структурата на мачовете от app.js ----
+// Структурата на мачовете — трябва да съвпада с app.js
 const groups = {
   A: ["Mexico", "South Africa", "South Korea", "Czechia"],
   B: ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
@@ -32,74 +33,87 @@ const groups = {
 const pairings = [ [0,1],[2,3],[0,2],[3,1],[3,0],[1,2] ];
 
 const ourMatches = Object.entries(groups).flatMap(([group, teams]) =>
-  pairings.map(([h,a], idx) => ({
-    id:   `${group}-${idx+1}`,
+  pairings.map(([h, a], idx) => ({
+    id:   `${group}-${idx + 1}`,
     home: teams[h],
     away: teams[a]
   }))
 );
 
-// Алтернативни имена (openfootball може да ползва различни варианти)
+// ESPN може да ползва различни имена
 const aliases = {
   "Czechia":                ["Czech Republic"],
-  "United States":          ["USA", "United States"],
+  "United States":          ["USA"],
   "Ivory Coast":            ["Côte d'Ivoire", "Cote d'Ivoire"],
-  "South Korea":            ["Korea Republic", "Korea DPR"],
-  "Bosnia and Herzegovina": ["Bosnia & Herzegovina", "Bosnia and Herzegovina"],
+  "South Korea":            ["Korea Republic", "South Korea"],
+  "Bosnia and Herzegovina": ["Bosnia & Herzegovina", "Bosnia and Herzegovi"],
   "Cape Verde":             ["Cabo Verde"],
-  "DR Congo":               ["Congo DR"],
+  "DR Congo":               ["Congo DR", "Democratic Republic of Congo"],
   "Turkey":                 ["Türkiye"],
   "Curacao":                ["Curaçao"],
 };
 
 function norm(s) { return (s || "").toLowerCase().trim(); }
 
-function match(ourName, apiName) {
-  if (norm(ourName) === norm(apiName)) return true;
-  return (aliases[ourName] || []).some(a => norm(a) === norm(apiName));
+function namesMatch(ourName, espnName) {
+  if (norm(ourName) === norm(espnName)) return true;
+  return (aliases[ourName] || []).some(a => norm(a) === norm(espnName));
 }
 
 async function main() {
-  console.log("Теглям данни от openfootball World Cup 2026...");
-  const res = await fetch(SOURCE_URL);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  console.log("Теглям от ESPN API...");
+  const res = await fetch(ESPN_URL);
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   const data = await res.json();
 
-  const apiMatches = data.matches || [];
-  console.log(`Получени ${apiMatches.length} мача.`);
+  const events = data.events || [];
+  console.log(`Получени ${events.length} мача от ESPN.`);
 
   const results = {};
-  let found = 0;
 
   for (const our of ourMatches) {
-    const api = apiMatches.find(m => {
-      const t1 = m.team1?.name || m.team1 || "";
-      const t2 = m.team2?.name || m.team2 || "";
-      return match(our.home, t1) && match(our.away, t2);
+    const event = events.find(e => {
+      const comps = e.competitions?.[0]?.competitors || [];
+      if (comps.length < 2) return false;
+      const home = comps.find(c => c.homeAway === "home")?.team?.displayName || "";
+      const away = comps.find(c => c.homeAway === "away")?.team?.displayName || "";
+      return namesMatch(our.home, home) && namesMatch(our.away, away);
     });
 
-    if (!api) continue;
+    if (!event) continue;
 
-    // openfootball записва резултати в score1 / score2
-    const s1 = api.score1 ?? api.ft?.[0] ?? null;
-    const s2 = api.score2 ?? api.ft?.[1] ?? null;
+    const comp   = event.competitions?.[0];
+    const status = comp?.status?.type;
 
-    if (s1 !== null && s2 !== null) {
-      results[our.id] = { home: Number(s1), away: Number(s2) };
-      found++;
+    // Записваме само завършени или текущи мачове
+    const isActive = status?.state === "post" || status?.state === "in";
+    if (!isActive) continue;
+
+    const comps    = comp.competitors || [];
+    const homeComp = comps.find(c => c.homeAway === "home");
+    const awayComp = comps.find(c => c.homeAway === "away");
+
+    const homeScore = parseInt(homeComp?.score ?? "-1");
+    const awayScore = parseInt(awayComp?.score ?? "-1");
+
+    if (homeScore >= 0 && awayScore >= 0) {
+      results[our.id] = { home: homeScore, away: awayScore };
     }
   }
 
-  console.log(`Записани резултати: ${found} мача.`);
+  const matchCount = Object.keys(results).length;
+  console.log(`Записани резултати за ${matchCount} мача.`);
 
   const output = JSON.stringify({ updatedAt: new Date().toISOString(), matches: results }, null, 2);
   const root   = path.join(__dirname, "..");
-
   fs.mkdirSync(path.join(root, "data"), { recursive: true });
   fs.writeFileSync(path.join(root, "results.json"),         output, "utf-8");
   fs.writeFileSync(path.join(root, "data", "results.json"), output, "utf-8");
 
-  console.log("✓ results.json и data/results.json обновени:", new Date().toISOString());
+  console.log("✓ Записано:", new Date().toISOString());
+  if (matchCount > 0) {
+    console.log("Резултати:", JSON.stringify(results, null, 2));
+  }
 }
 
 main().catch(err => { console.error("Грешка:", err.message); process.exit(1); });
