@@ -1,4 +1,8 @@
+
 {
-  "updatedAt": "2026-06-15T05:56:23.767Z",
-  "matches": {}
+  "updatedAt": "2026-06-12T12:00:00Z",
+  "matches": {
+    "A-1": { "home": 2, "away": 0 },
+    "A-2": { "home": 2, "away": 1 }
+  }
 }
