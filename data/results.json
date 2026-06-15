@@ -1,7 +1,49 @@
 {
-  "updatedAt": "2026-06-12T12:00:00Z",
+  "updatedAt": "2026-06-15T06:02:45.150Z",
   "matches": {
-    "A-1": { "home": 2, "away": 0 },
-    "A-2": { "home": 2, "away": 1 }
+    "A-1": {
+      "home": 2,
+      "away": 0
+    },
+    "A-2": {
+      "home": 2,
+      "away": 1
+    },
+    "B-2": {
+      "home": 1,
+      "away": 1
+    },
+    "C-1": {
+      "home": 1,
+      "away": 1
+    },
+    "C-2": {
+      "home": 0,
+      "away": 1
+    },
+    "D-1": {
+      "home": 4,
+      "away": 1
+    },
+    "D-2": {
+      "home": 2,
+      "away": 0
+    },
+    "E-1": {
+      "home": 7,
+      "away": 1
+    },
+    "E-2": {
+      "home": 1,
+      "away": 0
+    },
+    "F-1": {
+      "home": 2,
+      "away": 2
+    },
+    "F-2": {
+      "home": 5,
+      "away": 1
+    }
   }
 }
