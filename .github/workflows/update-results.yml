@@ -1,1 +1,33 @@
+name: Update World Cup Results
 
+on:
+  schedule:
+    # На всеки 30 минути (подходящо за мачови дни)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # позволява ръчно стартиране
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update results
+        run: node scripts/update-results.js
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add results.json data/results.json
+          git diff --cached --quiet || git commit -m "🏆 Update WC2026 results [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git push
