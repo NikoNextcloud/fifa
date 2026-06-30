@@ -124,10 +124,27 @@ const matches = Object.entries(groups).flatMap(([group, teams]) =>
 const state = {
   scores: {},
   knockoutScores: {},
+  knockoutFixtures: {},
   userBets: JSON.parse(localStorage.getItem("fifa2026_bets")) || {},
   lastUpdated: "",
   groupFilter: "all",
   statusFilter: "all"
+};
+
+const ESPN_LIVE_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" +
+  "?limit=200&dates=20260611-20260719";
+
+const espnAliases = {
+  "Bosnia and Herzegovina": ["Bosnia-Herzegovina", "Bosnia & Herzegovina"],
+  "Czechia": ["Czech Republic"],
+  "United States": ["USA", "United States of America"],
+  "Ivory Coast": ["Cote d'Ivoire", "Côte d'Ivoire"],
+  "South Korea": ["Korea Republic"],
+  "Cape Verde": ["Cabo Verde"],
+  "DR Congo": ["Congo DR", "Democratic Republic of Congo"],
+  "Turkey": ["Türkiye"],
+  "Curacao": ["Curaçao"]
 };
 
 const views = {
@@ -347,11 +364,16 @@ function resolveSlot(slot, qualifiers) {
 function buildBracketRounds() {
   const qualifiers = getQualifiers();
 
+  function withLiveFixture(match) {
+    const fixture = state.knockoutFixtures[match.id];
+    return fixture ? { ...match, home: fixture.home, away: fixture.away } : match;
+  }
+
   const round32 = bracketSeeds.map((seed, index) => {
     const home = resolveSlot(seed.home, qualifiers);
     const away = resolveSlot(seed.away, qualifiers);
     return { id: `R32-${index + 1}`, home, away };
-  });
+  }).map(withLiveFixture);
 
   function nextRound(prevRound, roundPrefix) {
     const result = [];
@@ -368,15 +390,15 @@ function buildBracketRounds() {
     return result;
   }
 
-  const round16 = nextRound(round32, "R16");
-  const quarter = nextRound(round16, "QF");
-  const semi = nextRound(quarter, "SF");
-  const final = nextRound(semi, "F");
+  const round16 = nextRound(round32, "R16").map(withLiveFixture);
+  const quarter = nextRound(round16, "QF").map(withLiveFixture);
+  const semi = nextRound(quarter, "SF").map(withLiveFixture);
+  const final = nextRound(semi, "F").map(withLiveFixture);
   const thirdPlace = semi.length === 2 ? [{
     id: "3RD",
     home: matchLoserTeam(semi[0]),
     away: matchLoserTeam(semi[1])
-  }] : [];
+  }].map(withLiveFixture) : [];
 
   return { round32, round16, quarter, semi, thirdPlace, final };
 }
@@ -760,31 +782,205 @@ function renderAll() {
   renderProgress();
 }
 
+function normalizeTeamName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function teamNamesMatch(ourName, espnName) {
+  const wanted = [ourName, ...(espnAliases[ourName] || [])].map(normalizeTeamName);
+  return wanted.includes(normalizeTeamName(espnName));
+}
+
+function resultFromEspnEvent(event, ourHome, ourAway) {
+  const competition = event?.competitions?.[0];
+  const competitors = competition?.competitors || [];
+  const espnHome = competitors.find((team) => team.homeAway === "home");
+  const espnAway = competitors.find((team) => team.homeAway === "away");
+  const espnHomeName = espnHome?.team?.displayName || "";
+  const espnAwayName = espnAway?.team?.displayName || "";
+  const sameOrder = teamNamesMatch(ourHome, espnHomeName) && teamNamesMatch(ourAway, espnAwayName);
+  const reverseOrder = teamNamesMatch(ourHome, espnAwayName) && teamNamesMatch(ourAway, espnHomeName);
+  if (!sameOrder && !reverseOrder) return null;
+
+  const status = competition?.status?.type?.state;
+  if (status !== "in" && status !== "post") return null;
+  const espnHomeScore = Number.parseInt(espnHome?.score, 10);
+  const espnAwayScore = Number.parseInt(espnAway?.score, 10);
+  if (!Number.isFinite(espnHomeScore) || !Number.isFinite(espnAwayScore)) return null;
+
+  const result = sameOrder
+    ? { home: espnHomeScore, away: espnAwayScore }
+    : { home: espnAwayScore, away: espnHomeScore };
+  const homeShootout = Number(espnHome?.shootoutScore);
+  const awayShootout = Number(espnAway?.shootoutScore);
+  if (result.home === result.away && Number.isFinite(homeShootout) && Number.isFinite(awayShootout) && homeShootout !== awayShootout) {
+    const espnHomeWon = homeShootout > awayShootout;
+    result.penaltyWinner = sameOrder
+      ? (espnHomeWon ? "home" : "away")
+      : (espnHomeWon ? "away" : "home");
+  }
+  return result;
+}
+
+function findEspnResult(events, home, away) {
+  for (const event of events) {
+    const result = resultFromEspnEvent(event, home, away);
+    if (result) return result;
+  }
+  return null;
+}
+
+function canonicalTeamName(espnName) {
+  const allTeams = Object.values(groups).flat();
+  return allTeams.find((team) => teamNamesMatch(team, espnName)) || null;
+}
+
+function eventTeams(event) {
+  const competitors = event?.competitions?.[0]?.competitors || [];
+  const home = competitors.find((team) => team.homeAway === "home");
+  const away = competitors.find((team) => team.homeAway === "away");
+  return {
+    home: canonicalTeamName(home?.team?.displayName),
+    away: canonicalTeamName(away?.team?.displayName)
+  };
+}
+
+function formatLiveDate(isoDate) {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString("bg-BG", {
+    day: "numeric",
+    month: "long",
+    timeZone: "Europe/Sofia"
+  });
+}
+
+function formatLiveTime(isoDate) {
+  const date = new Date(isoDate);
+  return `${date.toLocaleTimeString("bg-BG", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Sofia"
+  })} ч.`;
+}
+
+function buildOfficialGroupMatches(events) {
+  const officialMatches = [];
+  Object.keys(groups).forEach((group) => {
+    const groupEvents = events
+      .filter((event) => event?.competitions?.[0]?.altGameNote === `FIFA World Cup, Group ${group}`)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    groupEvents.forEach((event, index) => {
+      const teams = eventTeams(event);
+      const competition = event.competitions?.[0];
+      if (!teams.home || !teams.away) return;
+      officialMatches.push({
+        id: `${group}-${index + 1}`,
+        group,
+        date: formatLiveDate(event.date),
+        time: formatLiveTime(event.date),
+        location: competition?.venue?.fullName || event?.venue?.displayName || "Предстои уточняване",
+        home: teams.home,
+        away: teams.away,
+        kickoff: event.date,
+        espnEvent: event
+      });
+    });
+  });
+  return officialMatches.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+}
+
+function buildOfficialKnockout(events) {
+  const rounds = [
+    { slug: "round-of-32", prefix: "R32" },
+    { slug: "round-of-16", prefix: "R16" },
+    { slug: "quarterfinals", prefix: "QF" },
+    { slug: "semifinals", prefix: "SF" },
+    { slug: "3rd-place-match", prefix: "3RD" },
+    { slug: "final", prefix: "F" }
+  ];
+  const fixtures = {};
+  const scores = {};
+
+  rounds.forEach(({ slug, prefix }) => {
+    const roundEvents = events
+      .filter((event) => event?.season?.slug === slug)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    roundEvents.forEach((event, index) => {
+      const id = prefix === "3RD" ? "3RD" : `${prefix}-${index + 1}`;
+      const teams = eventTeams(event);
+      // Keep even partially known fixtures so a future placeholder is not
+      // replaced by a guessed team from the old static bracket.
+      fixtures[id] = teams;
+      if (teams.home && teams.away) {
+        const result = resultFromEspnEvent(event, teams.home, teams.away);
+        if (result) scores[id] = result;
+      }
+    });
+  });
+  return { fixtures, scores };
+}
+
+async function loadLiveResults() {
+  const response = await fetch(ESPN_LIVE_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`ESPN HTTP ${response.status}`);
+  const data = await response.json();
+  const events = data.events || [];
+  if (!events.length) throw new Error("ESPN не върна мачове");
+
+  const officialMatches = buildOfficialGroupMatches(events);
+  if (officialMatches.length !== 72) {
+    throw new Error(`Очаквани 72 групови мача, получени ${officialMatches.length}`);
+  }
+  matches.splice(0, matches.length, ...officialMatches);
+
+  const groupScores = {};
+  officialMatches.forEach((match) => {
+    const result = resultFromEspnEvent(match.espnEvent, match.home, match.away);
+    if (result) groupScores[match.id] = result;
+  });
+  if (!Object.keys(groupScores).length) throw new Error("Няма разпознати резултати от ESPN");
+  state.scores = groupScores;
+
+  const knockout = buildOfficialKnockout(events);
+  state.knockoutFixtures = knockout.fixtures;
+  state.knockoutScores = knockout.scores;
+
+  state.lastUpdated = new Date().toISOString();
+  renderAll();
+  if (syncStatus) syncStatus.textContent = `НА ЖИВО • ${formatSyncTime(state.lastUpdated)}`;
+}
+
+async function loadFallbackResults() {
+  const response = await fetch("results.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`JSON HTTP ${response.status}`);
+  const data = await response.json();
+  if (data?.matches) state.scores = data.matches;
+  if (data?.knockout) state.knockoutScores = data.knockout;
+  state.lastUpdated = data.updatedAt || new Date().toISOString();
+  renderAll();
+  if (syncStatus) syncStatus.textContent = `РЕЗЕРВНИ ДАННИ • ${formatSyncTime(state.lastUpdated)}`;
+}
+
 async function updateResults() {
-  if (syncStatus) syncStatus.textContent = "Обновяване...";
+  if (syncStatus) syncStatus.textContent = "Обновяване на живо...";
   try {
-    // Reading from localized relative URL which works cleanly anywhere (local folder or GitHub Pages)
-    const response = await fetch("results.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    
-    // Parse user's specific results.json format: { "matches": { "A-1": { "home": 2, "away": 0 } } }
-    if (data && data.matches) {
-      state.scores = data.matches;
+    await loadLiveResults();
+  } catch (liveError) {
+    console.error("ESPN live грешка:", liveError);
+    try {
+      await loadFallbackResults();
+    } catch (fallbackError) {
+      console.error("Резервният JSON също не се зареди:", fallbackError);
+      if (syncStatus) syncStatus.textContent = "НЯМА ВРЪЗКА • опит след 60 сек.";
+      renderAll();
     }
-    // Резултати от елиминационната фаза (по избор): { "knockout": { "R32-1": { "home": 2, "away": 1 } } }
-    if (data && data.knockout) {
-      state.knockoutScores = data.knockout;
-    }
-    
-    state.lastUpdated = data.updatedAt || new Date().toISOString();
-    renderAll();
-    if (syncStatus) syncStatus.textContent = `Последно: ${formatSyncTime(state.lastUpdated)}`;
-  } catch (error) {
-    console.error("Грешка при четене на резултати:", error);
-    if (syncStatus) syncStatus.textContent = "Локален JSON";
-    // Fallback: render anyway so it never stays blank!
-    renderAll();
   }
 }
 

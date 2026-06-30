@@ -46,7 +46,7 @@ const aliases = {
   "United States":          ["USA"],
   "Ivory Coast":            ["Côte d'Ivoire", "Cote d'Ivoire"],
   "South Korea":            ["Korea Republic", "South Korea"],
-  "Bosnia and Herzegovina": ["Bosnia & Herzegovina", "Bosnia and Herzegovi"],
+  "Bosnia and Herzegovina": ["Bosnia-Herzegovina", "Bosnia & Herzegovina", "Bosnia and Herzegovi"],
   "Cape Verde":             ["Cabo Verde"],
   "DR Congo":               ["Congo DR", "Democratic Republic of Congo"],
   "Turkey":                 ["Türkiye"],
@@ -58,6 +58,29 @@ function norm(s) { return (s || "").toLowerCase().trim(); }
 function namesMatch(ourName, espnName) {
   if (norm(ourName) === norm(espnName)) return true;
   return (aliases[ourName] || []).some(a => norm(a) === norm(espnName));
+}
+
+function canonicalTeamName(espnName) {
+  return Object.values(groups).flat().find((team) => namesMatch(team, espnName)) || null;
+}
+
+function buildOfficialGroupMatches(events) {
+  return Object.keys(groups).flatMap((group) =>
+    events
+      .filter((event) => event?.competitions?.[0]?.altGameNote === `FIFA World Cup, Group ${group}`)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .map((event, index) => {
+        const competitors = event.competitions?.[0]?.competitors || [];
+        const homeName = competitors.find((team) => team.homeAway === "home")?.team?.displayName;
+        const awayName = competitors.find((team) => team.homeAway === "away")?.team?.displayName;
+        return {
+          id: `${group}-${index + 1}`,
+          home: canonicalTeamName(homeName),
+          away: canonicalTeamName(awayName)
+        };
+      })
+      .filter((match) => match.home && match.away)
+  );
 }
 
 /* ====================== ЕЛИМИНАЦИОННА ФАЗА — копие на логиката от app.js ====================== */
@@ -256,6 +279,12 @@ async function main() {
   console.log("Теглям от ESPN API...");
   const events = await fetchEspnEvents();
   console.log(`Получени ${events.length} мача от ESPN.`);
+
+  const officialGroupMatches = buildOfficialGroupMatches(events);
+  if (officialGroupMatches.length !== 72) {
+    throw new Error(`Очаквани 72 групови мача, получени ${officialGroupMatches.length}`);
+  }
+  ourMatches.splice(0, ourMatches.length, ...officialGroupMatches);
 
   const results = {};
   for (const our of ourMatches) {

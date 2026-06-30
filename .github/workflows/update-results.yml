@@ -2,7 +2,7 @@ name: Update World Cup Results
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 env:
