@@ -346,11 +346,10 @@ function resolveSlot(slot, qualifiers) {
 // Помощник: уникален id на знеение в knockout structure-та, напр. "R32-1"
 function buildBracketRounds() {
   const qualifiers = getQualifiers();
-  const groupsDone = allGroupsComplete();
 
   const round32 = bracketSeeds.map((seed, index) => {
-    const home = groupsDone ? resolveSlot(seed.home, qualifiers) : null;
-    const away = groupsDone ? resolveSlot(seed.away, qualifiers) : null;
+    const home = resolveSlot(seed.home, qualifiers);
+    const away = resolveSlot(seed.away, qualifiers);
     return { id: `R32-${index + 1}`, home, away };
   });
 
@@ -496,7 +495,7 @@ function renderBracket() {
   if (bracketStatus) {
     bracketStatus.textContent = groupsDone
       ? "Груповата фаза приключи — елиминационната схема е попълнена."
-      : `Груповата фаза тече: ${completedCount}/12 групи приключени. Схемата ще се попълни автоматично, щом групите завършат.`;
+      : `Груповата фаза тече: ${completedCount}/12 групи приключени. Победителите и вторите се появяват веднага щом групата им завърши — 8-те най-добри трети места ще се определят накрая, когато всички групи приключат.`;
   }
 
   const rounds = buildBracketRounds();

@@ -324,18 +324,18 @@ button, select, input {
 /* Структура на елиминациите (Бракет) — ляво / център (финал, трофей) / дясно */
 .modern-bracket-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: stretch;
   gap: 0;
   overflow-x: auto;
-  padding: 16px 0 30px;
+  padding: 16px 6px 24px;
   background: radial-gradient(ellipse at center, rgba(240, 197, 106, 0.06), transparent 70%);
   border-radius: 16px;
 }
 
 .bracket-side {
   display: flex;
-  gap: 14px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -347,22 +347,25 @@ button, select, input {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 10px;
-  min-width: 180px;
+  gap: 8px;
+  width: 138px;
+  flex-shrink: 0;
 }
 
 .bracket-mini-column .bracket-match {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex: 0 0 auto;
+}
+
+/* Изравнява двойките мачове, така че по-късните кръгове да се центрират спрямо предходните си двойки */
+.bracket-mini-column:nth-child(1) .bracket-match + .bracket-match {
+  margin-top: 8px;
 }
 
 .column-header {
-  font-size: 11px;
+  font-size: 10px;
   text-align: center;
   background: var(--panel-2);
-  padding: 6px;
+  padding: 5px;
   border-radius: 4px;
   font-weight: bold;
   color: var(--gold);
@@ -371,16 +374,17 @@ button, select, input {
 .bracket-match {
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: 6px;
 }
 
 .bracket-team {
-  font-size: 12px;
-  padding: 3px 0;
+  font-size: 11px;
+  padding: 2px 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-height: 18px;
 }
 
 .bracket-status {
@@ -399,7 +403,7 @@ button, select, input {
 }
 
 .bracket-flag {
-  width: 18px;
+  width: 16px;
   border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
@@ -415,8 +419,9 @@ button, select, input {
 .bracket-score {
   font-weight: bold;
   color: var(--gold);
-  min-width: 16px;
+  min-width: 14px;
   text-align: right;
+  flex-shrink: 0;
 }
 
 .bracket-team-winner {
@@ -430,20 +435,23 @@ button, select, input {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 16px;
-  min-width: 220px;
-  padding: 0 18px;
+  gap: 14px;
+  width: 434px;
+  flex-shrink: 0;
+  padding: 0 14px;
 }
 
 .bracket-center-top {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
 }
 
 .bracket-semi-left, .bracket-semi-right {
-  min-width: 150px;
+  width: 138px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -455,14 +463,15 @@ button, select, input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  width: 110px;
 }
 
 .bracket-champion-label {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--ink);
 }
 
@@ -470,11 +479,11 @@ button, select, input {
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px 16px;
+  padding: 8px 10px;
   font-weight: bold;
   color: var(--muted);
-  min-width: 110px;
-  font-size: 13px;
+  width: 100%;
+  font-size: 12px;
 }
 
 .bracket-champion-name.is-decided {
@@ -484,7 +493,7 @@ button, select, input {
 }
 
 .bracket-center-final {
-  width: 100%;
+  width: 138px;
 }
 
 .bracket-center-final .final-match {
@@ -493,7 +502,7 @@ button, select, input {
 }
 
 .bracket-center-bronze {
-  width: 100%;
+  width: 138px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -501,17 +510,17 @@ button, select, input {
 }
 
 .bracket-center-bronze .column-header {
-  font-size: 10px;
+  font-size: 9px;
   background: transparent;
   color: var(--muted);
 }
 
 .bracket-trophy {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .bracket-trophy-img {
-  width: 90px;
+  width: 64px;
   opacity: 0.92;
   filter: drop-shadow(0 4px 14px rgba(240, 197, 106, 0.25));
 }
@@ -613,18 +622,9 @@ button, select, input {
     margin-top: 4px;
   }
 
-  /* Елиминационна фаза: хоризонтално скролване с по-малки колони */
-  .bracket-mini-column {
-    min-width: 140px;
-  }
-
-  .bracket-center {
-    min-width: 170px;
-    padding: 0 10px;
-  }
-
+  /* Елиминационна фаза: хоризонтално скролване, фиксираните компактни ширини остават същите */
   .bracket-trophy-img {
-    width: 64px;
+    width: 56px;
   }
 
   .group-card, .table-card, .match-card {
