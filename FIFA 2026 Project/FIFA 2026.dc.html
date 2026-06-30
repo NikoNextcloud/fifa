@@ -137,31 +137,7 @@ class Component extends DCLogic {
 
   fetchResults = async () => {
     try {
-      // Try API first, fallback to local JSON
-      const apiUrl = 'https://raw.githubusercontent.com/rezarahiminia/worldcup2026-json/main/matches.json';
-      const localUrl = 'results.json';
-      
-      try {
-        const response = await fetch(apiUrl, { cache: 'no-store' });
-        if (response.ok) {
-          const data = await response.json();
-          const scores = {};
-          data.forEach(match => {
-            const matchId = `${match.group || 'KO'}-${match.id || match.match_number}`;
-            scores[matchId] = { 
-              home: match.home_goals !== undefined ? match.home_goals : (match.home_score !== undefined ? match.home_score : ''),
-              away: match.away_goals !== undefined ? match.away_goals : (match.away_score !== undefined ? match.away_score : '')
-            };
-          });
-          this.setState({ scores }, () => this.renderAll());
-          return;
-        }
-      } catch (apiError) {
-        console.log('API not available, using local data');
-      }
-      
-      // Fallback to local JSON
-      const response = await fetch(localUrl, { cache: 'no-store' });
+      const response = await fetch('results.json', { cache: 'no-store' });
       const data = await response.json();
       if (data.matches) this.setState({ scores: data.matches }, () => this.renderAll());
       if (data.knockout) this.setState({ knockoutScores: data.knockout }, () => this.renderAll());
