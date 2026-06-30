@@ -423,18 +423,64 @@ function renderBracketTeamRow(team, bracketMatch, isHome) {
   `;
 }
 
-function renderBracketColumn(title, roundMatches, isFinal) {
+function renderBracketSide(roundsSlice, sideClass) {
+  // roundsSlice = [r32pair(4 матча), r16(2 матча), qf(1 матч)] за едната половина
+  const [r32, r16, qf] = roundsSlice;
+  const columnsHTML = [
+    renderBracketRoundColumn(r32),
+    renderBracketRoundColumn(r16),
+    renderBracketRoundColumn(qf)
+  ];
+  // За дясната страна обръщаме реда на колоните, за да са най-близо до центъра напред-назад
+  const ordered = sideClass === "bracket-side-right" ? [...columnsHTML].reverse() : columnsHTML;
+  return `<div class="bracket-side ${sideClass}">${ordered.join("")}</div>`;
+}
+
+function renderBracketRoundColumn(roundMatches) {
   const matchesHTML = roundMatches.map((m) => `
-    <div class="bracket-match ${isFinal ? "final-match" : ""}">
+    <div class="bracket-match">
       ${renderBracketTeamRow(m.home, m, true)}
       ${renderBracketTeamRow(m.away, m, false)}
     </div>
   `).join("");
+  return `<div class="bracket-mini-column">${matchesHTML}</div>`;
+}
+
+function renderBracketCenter(semi, final, thirdPlace) {
+  const champion = matchWinnerTeam(final[0]);
+  const championName = champion ? bg(champion) : "?";
 
   return `
-    <div class="bracket-column ${isFinal ? "final-column" : ""}">
-      <div class="column-header" ${isFinal ? 'style="color: var(--gold);"' : ""}>${title}</div>
-      ${matchesHTML}
+    <div class="bracket-center">
+      <div class="bracket-center-top">
+        <div class="bracket-mini-column bracket-semi-left">
+          ${semi[0] ? `<div class="bracket-match">${renderBracketTeamRow(semi[0].home, semi[0], true)}${renderBracketTeamRow(semi[0].away, semi[0], false)}</div>` : ""}
+        </div>
+        <div class="bracket-champion-box">
+          <span class="bracket-champion-label">СВЕТОВЕН<br>ШАМПИОН</span>
+          <div class="bracket-champion-name ${champion ? "is-decided" : ""}">${championName}</div>
+        </div>
+        <div class="bracket-mini-column bracket-semi-right">
+          ${semi[1] ? `<div class="bracket-match">${renderBracketTeamRow(semi[1].home, semi[1], true)}${renderBracketTeamRow(semi[1].away, semi[1], false)}</div>` : ""}
+        </div>
+      </div>
+      <div class="bracket-center-final">
+        <div class="bracket-match final-match">
+          ${final[0] ? renderBracketTeamRow(final[0].home, final[0], true) + renderBracketTeamRow(final[0].away, final[0], false) : ""}
+        </div>
+      </div>
+      ${thirdPlace.length ? `
+        <div class="bracket-center-bronze">
+          <span class="column-header">BRONZE FINAL</span>
+          <div class="bracket-match">
+            ${renderBracketTeamRow(thirdPlace[0].home, thirdPlace[0], true)}
+            ${renderBracketTeamRow(thirdPlace[0].away, thirdPlace[0], false)}
+          </div>
+        </div>
+      ` : ""}
+      <div class="bracket-trophy">
+        <img src="2026_FIFA_World_Cup_emblem.png" alt="FIFA World Cup 2026" class="bracket-trophy-img">
+      </div>
     </div>
   `;
 }
@@ -455,29 +501,22 @@ function renderBracket() {
 
   const rounds = buildBracketRounds();
 
+  // Лява половина: R32 1-8 -> R16 1-4 -> QF 1-2 -> SF-1
+  const leftR32 = rounds.round32.slice(0, 8);
+  const leftR16 = rounds.round16.slice(0, 4);
+  const leftQF = rounds.quarter.slice(0, 2);
+
+  // Дясна половина: R32 9-16 -> R16 5-8 -> QF 3-4 -> SF-2
+  const rightR32 = rounds.round32.slice(8, 16);
+  const rightR16 = rounds.round16.slice(4, 8);
+  const rightQF = rounds.quarter.slice(2, 4);
+
   let html = "";
-  html += renderBracketColumn("1/16 Финали", rounds.round32, false);
-  html += renderBracketColumn("1/8 Финали", rounds.round16, false);
-  html += renderBracketColumn("Четвъртфинали", rounds.quarter, false);
-  html += renderBracketColumn("Полуфинали", rounds.semi, false);
-  html += renderBracketColumn("👑 ФИНАЛ", rounds.final, true);
+  html += renderBracketSide([leftR32, leftR16, leftQF], "bracket-side-left");
+  html += renderBracketCenter(rounds.semi, rounds.final, rounds.thirdPlace);
+  html += renderBracketSide([rightR32, rightR16, rightQF], "bracket-side-right");
 
   bracketContainer.innerHTML = html;
-
-  if (rounds.thirdPlace.length) {
-    const champion = matchWinnerTeam(rounds.final[0]);
-    const thirdHTML = `
-      <div class="bracket-third-place">
-        <div class="column-header">Мач за 3-то място</div>
-        <div class="bracket-match">
-          ${renderBracketTeamRow(rounds.thirdPlace[0].home, rounds.thirdPlace[0], true)}
-          ${renderBracketTeamRow(rounds.thirdPlace[0].away, rounds.thirdPlace[0], false)}
-        </div>
-        ${champion ? `<div class="bracket-champion">🏆 Шампион: ${bg(champion)}</div>` : ""}
-      </div>
-    `;
-    bracketContainer.insertAdjacentHTML("beforeend", thirdHTML);
-  }
 }
 
 function renderGroups() {
@@ -767,7 +806,7 @@ function init() {
   }
   // Guarantee a first-pass render before fetching
   renderAll();
-  setView("groups");
+  setView("bracket");
   updateResults();
   setInterval(updateResults, 60000);
 }

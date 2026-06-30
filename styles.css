@@ -321,20 +321,41 @@ button, select, input {
   line-height: 1;
 }
 
-/* Структура на елиминациите (Бракет) */
+/* Структура на елиминациите (Бракет) — ляво / център (финал, трофей) / дясно */
 .modern-bracket-container {
   display: flex;
-  gap: 20px;
+  justify-content: center;
+  align-items: stretch;
+  gap: 0;
   overflow-x: auto;
-  padding: 10px 0;
+  padding: 16px 0 30px;
+  background: radial-gradient(ellipse at center, rgba(240, 197, 106, 0.06), transparent 70%);
+  border-radius: 16px;
 }
 
-.bracket-column {
+.bracket-side {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.bracket-side-right {
+  flex-direction: row;
+}
+
+.bracket-mini-column {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 12px;
-  min-width: 200px;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.bracket-mini-column .bracket-match {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .column-header {
@@ -350,16 +371,16 @@ button, select, input {
 .bracket-match {
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 10px;
+  padding: 8px 10px;
   border-radius: 6px;
 }
 
 .bracket-team {
-  font-size: 13px;
-  padding: 2px 0;
+  font-size: 12px;
+  padding: 3px 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .bracket-status {
@@ -386,6 +407,9 @@ button, select, input {
 
 .bracket-team-name {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bracket-score {
@@ -400,25 +424,102 @@ button, select, input {
   font-weight: bold;
 }
 
-.bracket-match + .bracket-match {
-  margin-top: 8px;
-}
-
-.bracket-third-place {
-  min-width: 200px;
+/* Централна колона: полуфинали отгоре, шампион в средата, финал, бронз, трофей отдолу */
+.bracket-center {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  min-width: 220px;
+  padding: 0 18px;
 }
 
-.bracket-champion {
+.bracket-center-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.bracket-semi-left, .bracket-semi-right {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bracket-champion-box {
+  flex-shrink: 0;
   text-align: center;
-  font-weight: bold;
-  color: var(--gold);
-  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.bracket-champion-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.bracket-champion-name {
+  background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: bold;
+  color: var(--muted);
+  min-width: 110px;
+  font-size: 13px;
+}
+
+.bracket-champion-name.is-decided {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(240, 197, 106, 0.12);
+}
+
+.bracket-center-final {
+  width: 100%;
+}
+
+.bracket-center-final .final-match {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(240, 197, 106, 0.3);
+}
+
+.bracket-center-bronze {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.bracket-center-bronze .column-header {
+  font-size: 10px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.bracket-trophy {
+  margin-top: 6px;
+}
+
+.bracket-trophy-img {
+  width: 90px;
+  opacity: 0.92;
+  filter: drop-shadow(0 4px 14px rgba(240, 197, 106, 0.25));
+}
+
+@media (max-width: 1024px) {
+  .modern-bracket-container {
+    justify-content: flex-start;
+  }
 }
 
 /* Адаптивност за мобилни устройства */
@@ -513,8 +614,17 @@ button, select, input {
   }
 
   /* Елиминационна фаза: хоризонтално скролване с по-малки колони */
-  .bracket-column {
-    min-width: 160px;
+  .bracket-mini-column {
+    min-width: 140px;
+  }
+
+  .bracket-center {
+    min-width: 170px;
+    padding: 0 10px;
+  }
+
+  .bracket-trophy-img {
+    width: 64px;
   }
 
   .group-card, .table-card, .match-card {
