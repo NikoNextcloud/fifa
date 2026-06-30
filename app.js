@@ -123,6 +123,7 @@ const matches = Object.entries(groups).flatMap(([group, teams]) =>
 
 const state = {
   scores: {},
+  knockoutScores: {},
   userBets: JSON.parse(localStorage.getItem("fifa2026_bets")) || {},
   lastUpdated: "",
   groupFilter: "all",
@@ -260,6 +261,223 @@ function calculateTable(group) {
     b.goalsFor - a.goalsFor ||
     a.team.localeCompare(b.team)
   );
+}
+
+/* ====================== ЕЛИМИНАЦИОННА ФАЗА (BRACKET) ====================== */
+
+// Колко мача от групата трябва да са изиграни, за да я броим за "приключила"
+const MATCHES_PER_GROUP = 6;
+
+function groupIsComplete(group) {
+  return matches
+    .filter((m) => m.group === group)
+    .every((m) => isPlayed(state.scores[m.id]));
+}
+
+function allGroupsComplete() {
+  return Object.keys(groups).every(groupIsComplete);
+}
+
+// Класиране на 3-тите места между всички 12 групи (за избор на топ 8)
+function rankThirdPlaceTeams() {
+  const thirds = Object.keys(groups).map((group) => {
+    const table = calculateTable(group);
+    return { group, ...table[2] };
+  });
+
+  return thirds.sort((a, b) =>
+    b.points - a.points ||
+    b.goalDifference - a.goalDifference ||
+    b.goalsFor - a.goalsFor ||
+    a.group.localeCompare(b.group)
+  );
+}
+
+// Официалната FIFA 2026 схема за 1/16-финалите (32 отбора, 12 групи А-L, 8 най-добри трети места)
+// Всеки запис описва откъде идва участникът: { type: "winner"/"runnerup", group } или { type: "third", slot }
+// "slot" е буквен идентификатор на реда от позиция в таблицата на третите места (попълва се динамично по групи C-D-E-F-G-H-I-J... в зависимост кои 8 от 12 групи са се класирали)
+const bracketSeeds = [
+  { home: { type: "winner", group: "A" },   away: { type: "third", slot: 0 } },
+  { home: { type: "winner", group: "B" },   away: { type: "third", slot: 1 } },
+  { home: { type: "winner", group: "E" },   away: { type: "runnerup", group: "I" } },
+  { home: { type: "winner", group: "F" },   away: { type: "runnerup", group: "E" } },
+  { home: { type: "winner", group: "C" },   away: { type: "third", slot: 2 } },
+  { home: { type: "winner", group: "I" },   away: { type: "third", slot: 3 } },
+  { home: { type: "winner", group: "D"},    away: { type: "runnerup", group: "C" } },
+  { home: { type: "runnerup", group: "A" }, away: { type: "runnerup", group: "B" } },
+  { home: { type: "winner", group: "L" },   away: { type: "third", slot: 4 } },
+  { home: { type: "winner", group: "K" },   away: { type: "third", slot: 5 } },
+  { home: { type: "winner", group: "H" },   away: { type: "runnerup", group: "J" } },
+  { home: { type: "winner", group: "J" },   away: { type: "third", slot: 6 } },
+  { home: { type: "winner", group: "G" },   away: { type: "third", slot: 7 } },
+  { home: { type: "runnerup", group: "F" }, away: { type: "runnerup", group: "G" } },
+  { home: { type: "runnerup", group: "H" }, away: { type: "runnerup", group: "K" } },
+  { home: { type: "runnerup", group: "D" }, away: { type: "runnerup", group: "L" } }
+];
+
+// Изгражда обект { winner: {A: team, B: team, ...}, runnerup: {...}, third: [team0..team7] }
+function getQualifiers() {
+  const winner = {};
+  const runnerup = {};
+  Object.keys(groups).forEach((group) => {
+    const table = calculateTable(group);
+    if (groupIsComplete(group)) {
+      winner[group] = table[0].team;
+      runnerup[group] = table[1].team;
+    }
+  });
+
+  const completedGroups = Object.keys(groups).filter(groupIsComplete);
+  let third = [];
+  if (completedGroups.length === 12) {
+    third = rankThirdPlaceTeams().slice(0, 8).map((row) => row.team);
+  }
+
+  return { winner, runnerup, third, completedGroups };
+}
+
+function resolveSlot(slot, qualifiers) {
+  if (slot.type === "winner") return qualifiers.winner[slot.group] || null;
+  if (slot.type === "runnerup") return qualifiers.runnerup[slot.group] || null;
+  if (slot.type === "third") return qualifiers.third[slot.slot] || null;
+  return null;
+}
+
+// Помощник: уникален id на знеение в knockout structure-та, напр. "R32-1"
+function buildBracketRounds() {
+  const qualifiers = getQualifiers();
+  const groupsDone = allGroupsComplete();
+
+  const round32 = bracketSeeds.map((seed, index) => {
+    const home = groupsDone ? resolveSlot(seed.home, qualifiers) : null;
+    const away = groupsDone ? resolveSlot(seed.away, qualifiers) : null;
+    return { id: `R32-${index + 1}`, home, away };
+  });
+
+  function nextRound(prevRound, roundPrefix) {
+    const result = [];
+    for (let i = 0; i < prevRound.length; i += 2) {
+      const a = prevRound[i];
+      const b = prevRound[i + 1];
+      result.push({
+        id: `${roundPrefix}-${result.length + 1}`,
+        home: matchWinnerTeam(a),
+        away: matchWinnerTeam(b),
+        from: [a.id, b.id]
+      });
+    }
+    return result;
+  }
+
+  const round16 = nextRound(round32, "R16");
+  const quarter = nextRound(round16, "QF");
+  const semi = nextRound(quarter, "SF");
+  const final = nextRound(semi, "F");
+  const thirdPlace = semi.length === 2 ? [{
+    id: "3RD",
+    home: matchLoserTeam(semi[0]),
+    away: matchLoserTeam(semi[1])
+  }] : [];
+
+  return { round32, round16, quarter, semi, thirdPlace, final };
+}
+
+function getKnockoutScore(matchId) {
+  return state.knockoutScores[matchId];
+}
+
+function matchWinnerTeam(bracketMatch) {
+  if (!bracketMatch || !bracketMatch.home || !bracketMatch.away) return null;
+  const score = getKnockoutScore(bracketMatch.id);
+  if (!isPlayed(score)) return null;
+  const h = Number(score.home);
+  const a = Number(score.away);
+  if (h === a) return score.penaltyWinner === "away" ? bracketMatch.away : bracketMatch.home;
+  return h > a ? bracketMatch.home : bracketMatch.away;
+}
+
+function matchLoserTeam(bracketMatch) {
+  if (!bracketMatch || !bracketMatch.home || !bracketMatch.away) return null;
+  const score = getKnockoutScore(bracketMatch.id);
+  if (!isPlayed(score)) return null;
+  const winner = matchWinnerTeam(bracketMatch);
+  return winner === bracketMatch.home ? bracketMatch.away : bracketMatch.home;
+}
+
+function renderBracketTeamRow(team, bracketMatch, isHome) {
+  if (!team) {
+    return `<div class="bracket-team bracket-team-tbd">—</div>`;
+  }
+  const score = bracketMatch ? getKnockoutScore(bracketMatch.id) : null;
+  const played = isPlayed(score);
+  const winnerTeam = played ? matchWinnerTeam(bracketMatch) : null;
+  const isWinner = played && winnerTeam === team;
+  const scoreVal = played ? (isHome ? score.home : score.away) : "";
+
+  return `
+    <div class="bracket-team ${isWinner ? "bracket-team-winner" : ""}">
+      <img src="${getFlagUrl(team)}" alt="" class="bracket-flag">
+      <span class="bracket-team-name">${bg(team)}</span>
+      ${played ? `<span class="bracket-score">${scoreVal}</span>` : ""}
+    </div>
+  `;
+}
+
+function renderBracketColumn(title, roundMatches, isFinal) {
+  const matchesHTML = roundMatches.map((m) => `
+    <div class="bracket-match ${isFinal ? "final-match" : ""}">
+      ${renderBracketTeamRow(m.home, m, true)}
+      ${renderBracketTeamRow(m.away, m, false)}
+    </div>
+  `).join("");
+
+  return `
+    <div class="bracket-column ${isFinal ? "final-column" : ""}">
+      <div class="column-header" ${isFinal ? 'style="color: var(--gold);"' : ""}>${title}</div>
+      ${matchesHTML}
+    </div>
+  `;
+}
+
+function renderBracket() {
+  const bracketContainer = document.querySelector("#bracketContainer");
+  const bracketStatus = document.querySelector("#bracketStatus");
+  if (!bracketContainer) return;
+
+  const groupsDone = allGroupsComplete();
+  const completedCount = Object.keys(groups).filter(groupIsComplete).length;
+
+  if (bracketStatus) {
+    bracketStatus.textContent = groupsDone
+      ? "Груповата фаза приключи — елиминационната схема е попълнена."
+      : `Груповата фаза тече: ${completedCount}/12 групи приключени. Схемата ще се попълни автоматично, щом групите завършат.`;
+  }
+
+  const rounds = buildBracketRounds();
+
+  let html = "";
+  html += renderBracketColumn("1/16 Финали", rounds.round32, false);
+  html += renderBracketColumn("1/8 Финали", rounds.round16, false);
+  html += renderBracketColumn("Четвъртфинали", rounds.quarter, false);
+  html += renderBracketColumn("Полуфинали", rounds.semi, false);
+  html += renderBracketColumn("👑 ФИНАЛ", rounds.final, true);
+
+  bracketContainer.innerHTML = html;
+
+  if (rounds.thirdPlace.length) {
+    const champion = matchWinnerTeam(rounds.final[0]);
+    const thirdHTML = `
+      <div class="bracket-third-place">
+        <div class="column-header">Мач за 3-то място</div>
+        <div class="bracket-match">
+          ${renderBracketTeamRow(rounds.thirdPlace[0].home, rounds.thirdPlace[0], true)}
+          ${renderBracketTeamRow(rounds.thirdPlace[0].away, rounds.thirdPlace[0], false)}
+        </div>
+        ${champion ? `<div class="bracket-champion">🏆 Шампион: ${bg(champion)}</div>` : ""}
+      </div>
+    `;
+    bracketContainer.insertAdjacentHTML("beforeend", thirdHTML);
+  }
 }
 
 function renderGroups() {
@@ -500,6 +718,7 @@ function renderAll() {
   renderMatches();
   renderBets();
   renderStandings();
+  renderBracket();
   renderProgress();
 }
 
@@ -514,6 +733,10 @@ async function updateResults() {
     // Parse user's specific results.json format: { "matches": { "A-1": { "home": 2, "away": 0 } } }
     if (data && data.matches) {
       state.scores = data.matches;
+    }
+    // Резултати от елиминационната фаза (по избор): { "knockout": { "R32-1": { "home": 2, "away": 1 } } }
+    if (data && data.knockout) {
+      state.knockoutScores = data.knockout;
     }
     
     state.lastUpdated = data.updatedAt || new Date().toISOString();
